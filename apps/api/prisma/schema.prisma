@@ -1,0 +1,196 @@
+// Grocery Store Management App - Prisma Schema
+// Documentation: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// User & Authentication
+// ============================================
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+// ============================================
+// Product Management
+// ============================================
+
+model Category {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  description String?
+  products    Product[]
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@map("categories")
+}
+
+model Product {
+  id            String      @id @default(uuid())
+  barcode       String      @unique
+  name          String
+  description   String?
+  price         Decimal     @db.Decimal(10, 2)
+  cost          Decimal     @db.Decimal(10, 2)
+  categoryId    String?     @map("category_id")
+  category      Category?   @relation(fields: [categoryId], references: [id])
+  reorderLevel  Int         @default(5) @map("reorder_level")
+  isCustomLabel Boolean     @default(false) @map("is_custom_label")
+  inventory     Inventory?
+  saleItems     SaleItem[]
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+
+  @@map("products")
+}
+
+model Inventory {
+  id          String   @id @default(uuid())
+  productId   String   @unique @map("product_id")
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity    Int      @default(0)
+  lastUpdated DateTime @default(now()) @map("last_updated")
+
+  @@map("inventory")
+}
+
+// ============================================
+// Sales & Transactions
+// ============================================
+
+model Customer {
+  id           String         @id @default(uuid())
+  name         String
+  phone        String?        @unique
+  email        String?
+  address      String?
+  notes        String?
+  sales        Sale[]
+  creditLedger CreditLedger[]
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+
+  @@map("customers")
+}
+
+model Sale {
+  id           String         @id @default(uuid())
+  customerId   String?        @map("customer_id")
+  customer     Customer?      @relation(fields: [customerId], references: [id])
+  totalAmount  Decimal        @db.Decimal(10, 2) @map("total_amount")
+  paymentType  PaymentType    @default(CASH) @map("payment_type")
+  status       SaleStatus     @default(COMPLETED)
+  syncStatus   SyncStatus     @default(SYNCED) @map("sync_status")
+  syncId       String?        @unique @map("sync_id") // For offline sync
+  items        SaleItem[]
+  creditLedger CreditLedger[]
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+
+  @@map("sales")
+}
+
+model SaleItem {
+  id        String  @id @default(uuid())
+  saleId    String  @map("sale_id")
+  sale      Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  productId String  @map("product_id")
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  unitPrice Decimal @db.Decimal(10, 2) @map("unit_price")
+  subtotal  Decimal @db.Decimal(10, 2)
+
+  @@map("sale_items")
+}
+
+// ============================================
+// Credit Management
+// ============================================
+
+model CreditLedger {
+  id          String          @id @default(uuid())
+  customerId  String          @map("customer_id")
+  customer    Customer        @relation(fields: [customerId], references: [id])
+  saleId      String?         @map("sale_id")
+  sale        Sale?           @relation(fields: [saleId], references: [id])
+  type        CreditEntryType
+  amount      Decimal         @db.Decimal(10, 2)
+  balance     Decimal         @db.Decimal(10, 2) // Running balance after this entry
+  description String?
+  createdAt   DateTime        @default(now()) @map("created_at")
+
+  @@map("credit_ledger")
+}
+
+// ============================================
+// Accounting
+// ============================================
+
+model Expense {
+  id          String   @id @default(uuid())
+  category    String
+  amount      Decimal  @db.Decimal(10, 2)
+  description String?
+  date        DateTime
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("expenses")
+}
+
+model SupplierPayment {
+  id           String        @id @default(uuid())
+  supplierName String        @map("supplier_name")
+  amount       Decimal       @db.Decimal(10, 2)
+  description  String?
+  dueDate      DateTime?     @map("due_date")
+  paidDate     DateTime?     @map("paid_date")
+  status       PaymentStatus @default(PENDING)
+  createdAt    DateTime      @default(now()) @map("created_at")
+
+  @@map("supplier_payments")
+}
+
+// ============================================
+// Enums
+// ============================================
+
+enum PaymentType {
+  CASH
+  CREDIT
+}
+
+enum SaleStatus {
+  COMPLETED
+  VOIDED
+}
+
+enum SyncStatus {
+  PENDING
+  SYNCED
+  FAILED
+}
+
+enum CreditEntryType {
+  CHARGE
+  PAYMENT
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  OVERDUE
+}

@@ -1,96 +1,118 @@
-# GroceryApp
+# Grocery Store Management App
 
-<a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
+A Progressive Web App (PWA) for managing a small grocery store, featuring barcode scanning for instant price lookup, sales recording, customer credit tracking, inventory management, and basic accounting.
 
-✨ Your new, shiny [Nx workspace](https://nx.dev) is ready ✨.
+## Tech Stack
 
-[Learn more about this workspace setup and its capabilities](https://nx.dev/getting-started/intro#learn-nx?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects) or run `npx nx graph` to visually explore what was created. Now, let's get you up to speed!
+- **Monorepo**: Nx Workspace
+- **Frontend**: Next.js 16 (PWA) + React 19 + Tailwind CSS + shadcn/ui
+- **Backend**: NestJS 11 + Prisma ORM
+- **Database**: PostgreSQL 15
+- **Authentication**: JWT
 
-## Run tasks
+## Project Structure
 
-To run tasks with Nx use:
-
-```sh
-npx nx <target> <project-name>
+```
+grocery-app/
+├── apps/
+│   ├── api/           # NestJS Backend (port 3001)
+│   │   └── prisma/    # Database schema & migrations
+│   └── web/           # Next.js Frontend (port 3000)
+├── libs/
+│   └── shared/        # Shared TypeScript types
+├── docs/              # Project documentation
+└── docker-compose.yml # PostgreSQL container
 ```
 
-For example:
+## Quick Start
 
-```sh
-npx nx build myproject
+### Prerequisites
+
+- Node.js 18+
+- Docker & Docker Compose
+- npm
+
+### Setup
+
+```bash
+# 1. Install dependencies
+npm install
+
+# 2. Start PostgreSQL database
+docker-compose up -d
+
+# 3. Generate Prisma client
+npm run db:generate
+
+# 4. Run database migrations
+npm run db:migrate
+
+# 5. Seed sample data
+npm run db:seed
+
+# 6. Start development servers
+npm run dev
 ```
 
-These targets are either [inferred automatically](https://nx.dev/concepts/inferred-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or defined in the `project.json` or `package.json` files.
+### Access
 
-[More about running tasks in the docs &raquo;](https://nx.dev/features/run-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+- **Web App**: http://localhost:3000
+- **API**: http://localhost:3001
+- **Prisma Studio**: `npm run db:studio`
 
-## Add new projects
+### Default Login
 
-While you could add new projects to your workspace manually, you might want to leverage [Nx plugins](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) and their [code generation](https://nx.dev/features/generate-code?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) feature.
+- **Email**: `owner@store.local`
+- **Password**: `grocery123`
 
-To install a new plugin you can use the `nx add` command. Here's an example of adding the React plugin:
-```sh
-npx nx add @nx/react
+## Available Scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start both API and Web servers |
+| `npm run dev:api` | Start only API server |
+| `npm run dev:web` | Start only Web server |
+| `npm run build` | Build all projects |
+| `npm run lint` | Lint all projects |
+| `npm run test` | Run all tests |
+| `npm run db:generate` | Generate Prisma client |
+| `npm run db:migrate` | Run database migrations |
+| `npm run db:seed` | Seed the database |
+| `npm run db:studio` | Open Prisma Studio GUI |
+| `npm run db:reset` | Reset database (drop + migrate + seed) |
+
+## Features
+
+### MVP (3-week timeline)
+
+- [x] Project Setup & Infrastructure
+- [ ] JWT Authentication
+- [ ] Product Management (CRUD, barcode labels)
+- [ ] Barcode Scanning & Price Lookup
+- [ ] Sales Recording (cash & credit)
+- [ ] Customer Credit Tracking
+- [ ] Inventory Management with low-stock alerts
+- [ ] Basic Accounting (expenses, profit margins)
+- [ ] Reports (sales, inventory, debts)
+- [ ] Offline Support with sync
+
+## Documentation
+
+See the `docs/` folder for:
+- `product-brief.md` - Product requirements
+- `architecture.md` - Technical architecture
+- `epics-and-stories.md` - User stories & sprint planning
+- `wireframes-guide.md` - UI wireframe descriptions
+
+## Environment Variables
+
+Copy `.env.example` to `.env` and configure:
+
+```env
+DATABASE_URL="postgresql://grocery:grocery_secret_123@localhost:5432/grocery_store"
+JWT_SECRET="your-super-secret-jwt-key"
 ```
 
-Use the plugin's generator to create new projects. For example, to create a new React app or library:
+## License
 
-```sh
-# Generate an app
-npx nx g @nx/react:app demo
-
-# Generate a library
-npx nx g @nx/react:lib some-lib
-```
-
-You can use `npx nx list` to get a list of installed plugins. Then, run `npx nx list <plugin-name>` to learn about more specific capabilities of a particular plugin. Alternatively, [install Nx Console](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) to browse plugins and generators in your IDE.
-
-[Learn more about Nx plugins &raquo;](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) | [Browse the plugin registry &raquo;](https://nx.dev/plugin-registry?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Set up CI!
-
-### Step 1
-
-To connect to Nx Cloud, run the following command:
-
-```sh
-npx nx connect
-```
-
-Connecting to Nx Cloud ensures a [fast and scalable CI](https://nx.dev/ci/intro/why-nx-cloud?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) pipeline. It includes features such as:
-
-- [Remote caching](https://nx.dev/ci/features/remote-cache?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Task distribution across multiple machines](https://nx.dev/ci/features/distribute-task-execution?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Automated e2e test splitting](https://nx.dev/ci/features/split-e2e-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Task flakiness detection and rerunning](https://nx.dev/ci/features/flaky-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-### Step 2
-
-Use the following command to configure a CI workflow for your workspace:
-
-```sh
-npx nx g ci-workflow
-```
-
-[Learn more about Nx on CI](https://nx.dev/ci/intro/ci-with-nx#ready-get-started-with-your-provider?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Install Nx Console
-
-Nx Console is an editor extension that enriches your developer experience. It lets you run tasks, generate code, and improves code autocompletion in your IDE. It is available for VSCode and IntelliJ.
-
-[Install Nx Console &raquo;](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Useful links
-
-Learn more:
-
-- [Learn more about this workspace setup](https://nx.dev/getting-started/intro#learn-nx?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects)
-- [Learn about Nx on CI](https://nx.dev/ci/intro/ci-with-nx?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Releasing Packages with Nx release](https://nx.dev/features/manage-releases?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [What are Nx plugins?](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-And join the Nx community:
-- [Discord](https://go.nx.dev/community)
-- [Follow us on X](https://twitter.com/nxdevtools) or [LinkedIn](https://www.linkedin.com/company/nrwl)
-- [Our Youtube channel](https://www.youtube.com/@nxdevtools)
-- [Our blog](https://nx.dev/blog?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+Private - All rights reserved
