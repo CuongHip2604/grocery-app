@@ -95,7 +95,7 @@ model Sale {
   paymentType  PaymentType    @default(CASH) @map("payment_type")
   status       SaleStatus     @default(COMPLETED)
   syncStatus   SyncStatus     @default(SYNCED) @map("sync_status")
-  syncId       String?        @unique @map("sync_id")
+  syncId       String?        @map("sync_id")
   items        SaleItem[]
   creditLedger CreditLedger[]
   createdAt    DateTime       @default(now()) @map("created_at")
