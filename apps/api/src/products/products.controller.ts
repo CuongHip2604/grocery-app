@@ -31,6 +31,7 @@ import {
   UpdateCategoryDto,
   ProductQueryDto,
   BulkImportDto,
+  BulkImportCategoryDto,
 } from './dto/products.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
@@ -119,6 +120,12 @@ export class CategoriesController {
   async createCategory(@Body() dto: CreateCategoryDto) {
     const category = await this.productsService.createCategory(dto);
     return { data: category };
+  }
+
+  @Post('bulk-import')
+  async bulkImportCategories(@Body() dto: BulkImportCategoryDto) {
+    const result = await this.productsService.bulkImportCategories(dto.categories);
+    return { data: result };
   }
 
   @Get()

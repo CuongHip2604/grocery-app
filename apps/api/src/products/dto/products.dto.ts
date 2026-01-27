@@ -7,6 +7,8 @@ import {
   IsMongoId,
   Min,
   IsInt,
+  IsArray,
+  ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -144,6 +146,23 @@ export class BulkCreateProductDto {
 
 export class BulkImportDto {
   products: BulkCreateProductDto[];
+}
+
+export class BulkCreateCategoryDto {
+  @IsString()
+  @IsNotEmpty()
+  name: string;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
+}
+
+export class BulkImportCategoryDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => BulkCreateCategoryDto)
+  categories: BulkCreateCategoryDto[];
 }
 
 export class ProductQueryDto {

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api, CreateProductInput, CreateSaleInput, CreateExpenseInput, BulkProductInput, CreateCategoryInput, CreateCustomerInput } from './api';
+import { api, CreateProductInput, CreateSaleInput, CreateExpenseInput, BulkProductInput, BulkCategoryInput, CreateCategoryInput, CreateCustomerInput } from './api';
 
 // Query keys
 export const queryKeys = {
@@ -141,6 +141,16 @@ export function useDeleteCategory() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.deleteCategory(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.categories });
+    },
+  });
+}
+
+export function useBulkImportCategories() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (categories: BulkCategoryInput[]) => api.bulkImportCategories(categories),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.categories });
     },

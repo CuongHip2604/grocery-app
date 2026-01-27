@@ -245,6 +245,11 @@ class ApiClient {
     return data;
   }
 
+  async bulkImportCategories(categories: BulkCategoryInput[]) {
+    const { data } = await this.client.post<{ data: BulkImportResult }>('/api/categories/bulk-import', { categories });
+    return data;
+  }
+
   // Sales
   async createSale(saleData: CreateSaleInput) {
     const { data } = await this.client.post<{ data: Sale }>('/api/sales', saleData);
@@ -440,6 +445,11 @@ export interface BulkProductInput {
   cost: number;
   reorderLevel?: number;
   initialStock?: number;
+}
+
+export interface BulkCategoryInput {
+  name: string;
+  description?: string;
 }
 
 export interface BulkImportResult {

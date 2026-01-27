@@ -13,6 +13,7 @@ import {
   UpdateCategoryDto,
   ProductQueryDto,
   BulkCreateProductDto,
+  BulkCreateCategoryDto,
 } from './dto/products.dto';
 
 @Injectable()
@@ -467,6 +468,46 @@ export class ProductsService {
     });
 
     return { message: 'Category deleted successfully' };
+  }
+
+  async bulkImportCategories(categories: BulkCreateCategoryDto[]) {
+    const results = {
+      success: 0,
+      failed: 0,
+      errors: [] as { row: number; name: string; error: string }[],
+    };
+
+    for (let i = 0; i < categories.length; i++) {
+      const dto = categories[i];
+      try {
+        // Check if category with same name exists
+        const existing = await this.prisma.category.findUnique({
+          where: { name: dto.name },
+        });
+
+        if (existing) {
+          throw new Error(`Category "${dto.name}" already exists`);
+        }
+
+        await this.prisma.category.create({
+          data: {
+            name: dto.name,
+            description: dto.description || null,
+          },
+        });
+
+        results.success++;
+      } catch (error) {
+        results.failed++;
+        results.errors.push({
+          row: i + 1,
+          name: dto.name,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
+    }
+
+    return results;
   }
 
   // ==================== HELPERS ====================

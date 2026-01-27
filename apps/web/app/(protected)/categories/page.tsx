@@ -3,22 +3,32 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory } from '../../../lib/hooks';
+import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory, useBulkImportCategories } from '../../../lib/hooks';
 import { categorySchema, CategoryFormData } from '../../../lib/schemas';
 import { Button, Input, Label, Card, CardContent, Spinner } from '../../../components/ui';
 import { Category } from '../../../lib/api';
 
 type ModalMode = 'create' | 'edit' | null;
 
+interface ImportResult {
+  success: number;
+  failed: number;
+  errors: { row: number; name: string; error: string }[];
+}
+
 export default function CategoriesPage() {
   const [modalMode, setModalMode] = useState<ModalMode>(null);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<Category | null>(null);
+  const [showBulkImport, setShowBulkImport] = useState(false);
+  const [bulkText, setBulkText] = useState('');
+  const [importResult, setImportResult] = useState<ImportResult | null>(null);
 
   const { data, isLoading } = useCategories();
   const createCategory = useCreateCategory();
   const updateCategory = useUpdateCategory();
   const deleteCategory = useDeleteCategory();
+  const bulkImportCategories = useBulkImportCategories();
 
   const categories = data?.data || [];
 
@@ -77,6 +87,37 @@ export default function CategoriesPage() {
     } catch {
       // Error handled by mutation
     }
+  };
+
+  const handleBulkImport = async () => {
+    if (!bulkText.trim()) return;
+
+    // Parse the text - each line is a category
+    // Format: "name" or "name | description"
+    const lines = bulkText.trim().split('\n').filter(line => line.trim());
+    const categories = lines.map(line => {
+      const parts = line.split('|').map(p => p.trim());
+      return {
+        name: parts[0],
+        description: parts[1] || undefined,
+      };
+    }).filter(c => c.name);
+
+    if (categories.length === 0) return;
+
+    try {
+      const result = await bulkImportCategories.mutateAsync(categories);
+      setImportResult(result.data);
+    } catch {
+      // Error handled by mutation
+    }
+  };
+
+  const closeBulkImport = () => {
+    setShowBulkImport(false);
+    setBulkText('');
+    setImportResult(null);
+    bulkImportCategories.reset();
   };
 
   const mutationError = modalMode === 'create' ? createCategory.error : updateCategory.error;
@@ -186,12 +227,128 @@ export default function CategoriesPage() {
         </div>
       )}
 
+      {/* Bulk Import Modal */}
+      {showBulkImport && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-background rounded-lg shadow-xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold">Nhập nhiều danh mục</h2>
+              <Button variant="ghost" size="sm" onClick={closeBulkImport}>
+                X
+              </Button>
+            </div>
+
+            {!importResult ? (
+              <>
+                <div className="rounded-md bg-muted p-3 text-sm mb-4">
+                  <p className="font-medium mb-1">Hướng dẫn:</p>
+                  <ul className="list-disc list-inside text-muted-foreground space-y-1">
+                    <li>Mỗi dòng là một danh mục</li>
+                    <li>Định dạng: <code className="bg-background px-1 rounded">Tên | Mô tả</code></li>
+                    <li>Mô tả là tùy chọn</li>
+                  </ul>
+                  <p className="mt-2 text-muted-foreground">Ví dụ:</p>
+                  <pre className="bg-background p-2 rounded mt-1 text-xs">
+{`Đồ uống | Nước ngọt, nước suối
+Bánh kẹo | Bánh, kẹo, snack
+Gia vị`}
+                  </pre>
+                </div>
+
+                <div className="space-y-2 mb-4">
+                  <Label htmlFor="bulk-text">Danh sách danh mục</Label>
+                  <textarea
+                    id="bulk-text"
+                    className="w-full min-h-[150px] p-3 border rounded-md text-sm font-mono resize-y"
+                    placeholder="Nhập danh mục, mỗi dòng một danh mục..."
+                    value={bulkText}
+                    onChange={(e) => setBulkText(e.target.value)}
+                  />
+                </div>
+
+                {bulkImportCategories.error && (
+                  <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive mb-4">
+                    {bulkImportCategories.error instanceof Error ? bulkImportCategories.error.message : 'Không thể nhập'}
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <Button type="button" variant="outline" className="flex-1" onClick={closeBulkImport}>
+                    Hủy
+                  </Button>
+                  <Button
+                    type="button"
+                    className="flex-1"
+                    disabled={!bulkText.trim() || bulkImportCategories.isPending}
+                    onClick={handleBulkImport}
+                  >
+                    {bulkImportCategories.isPending && <Spinner size="sm" className="mr-2" />}
+                    Nhập danh mục
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="rounded-md bg-green-500/10 p-4 mb-4">
+                  <p className="text-lg font-semibold text-green-600">Nhập hoàn tất!</p>
+                  <p className="text-sm mt-1">
+                    Thành công: <span className="font-medium">{importResult.success}</span>
+                  </p>
+                  {importResult.failed > 0 && (
+                    <p className="text-sm text-destructive">
+                      Thất bại: <span className="font-medium">{importResult.failed}</span>
+                    </p>
+                  )}
+                </div>
+
+                {importResult.errors.length > 0 && (
+                  <div className="space-y-2 mb-4">
+                    <p className="text-sm font-medium">Lỗi:</p>
+                    <div className="border rounded-md max-h-32 overflow-y-auto">
+                      {importResult.errors.map((err, i) => (
+                        <div key={i} className="p-2 text-sm border-b last:border-0">
+                          <span className="text-muted-foreground">Dòng {err.row}:</span>{' '}
+                          <span className="font-medium">{err.name}</span> -{' '}
+                          <span className="text-destructive">{err.error}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => {
+                      setBulkText('');
+                      setImportResult(null);
+                    }}
+                  >
+                    Nhập thêm
+                  </Button>
+                  <Button type="button" className="flex-1" onClick={closeBulkImport}>
+                    Đóng
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="p-4 space-y-4">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold">Danh mục</h1>
-          <Button size="sm" onClick={openCreate}>
-            Thêm mới
-          </Button>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={() => setShowBulkImport(true)}>
+              Nhập nhiều
+            </Button>
+            <Button size="sm" onClick={openCreate}>
+              Thêm mới
+            </Button>
+          </div>
         </div>
 
         {isLoading ? (
