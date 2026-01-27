@@ -94,8 +94,8 @@ export class NotificationsService implements OnModuleInit {
     if (products.length === 1) {
       const product = products[0];
       payload = {
-        title: 'Canh bao ton kho',
-        body: `San pham ${product.name} sap het (con ${product.quantity})`,
+        title: 'Cảnh báo tồn kho',
+        body: `Sản phẩm ${product.name} sắp hết (còn ${product.quantity})`,
         icon: '/icon-192.png',
         data: {
           url: '/inventory',
@@ -104,8 +104,8 @@ export class NotificationsService implements OnModuleInit {
       };
     } else {
       payload = {
-        title: 'Canh bao ton kho',
-        body: `${products.length} san pham sap het hang`,
+        title: 'Cảnh báo tồn kho',
+        body: `${products.length} sản phẩm sắp hết hàng`,
         icon: '/icon-192.png',
         data: {
           url: '/inventory?lowStock=true',

@@ -22,9 +22,9 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
   console.log('[firebase-messaging-sw.js] Received background message:', payload);
 
-  const notificationTitle = payload.notification?.title || 'Canh bao ton kho';
+  const notificationTitle = payload.notification?.title || 'Cảnh báo tồn kho';
   const notificationOptions = {
-    body: payload.notification?.body || 'Co san pham sap het hang',
+    body: payload.notification?.body || 'Có sản phẩm sắp hết hàng',
     icon: payload.notification?.icon || '/icon-192.png',
     badge: '/icon-192.png',
     tag: 'low-stock-notification',

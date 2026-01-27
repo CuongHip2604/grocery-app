@@ -18,7 +18,6 @@ export function initializeFirebaseApp(): FirebaseApp | null {
   }
 
   if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
-    console.warn('Firebase configuration not found. Push notifications will be disabled.');
     return null;
   }
 
@@ -48,7 +47,6 @@ export function getFirebaseMessaging(): Messaging | null {
     try {
       messaging = getMessaging(firebaseApp);
     } catch (error) {
-      console.error('Failed to initialize Firebase Messaging:', error);
       return null;
     }
   }
@@ -69,19 +67,16 @@ export async function getFCMToken(): Promise<string | null> {
   const messaging = getFirebaseMessaging();
 
   if (!messaging) {
-    console.warn('Firebase Messaging not initialized');
     return null;
   }
 
   const vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
 
   if (!vapidKey) {
-    console.warn('VAPID key not configured');
     return null;
   }
 
   try {
-    // Register service worker
     const swRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
 
     const token = await getToken(messaging, {
@@ -91,7 +86,6 @@ export async function getFCMToken(): Promise<string | null> {
 
     return token;
   } catch (error) {
-    console.error('Failed to get FCM token:', error);
     return null;
   }
 }

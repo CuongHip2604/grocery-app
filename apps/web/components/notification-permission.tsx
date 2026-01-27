@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Bell, BellOff, X, Check } from 'lucide-react';
-import { Button } from './ui';
+import { useEffect, useState } from 'react';
+import { Bell, X } from 'lucide-react';
 import {
   isNotificationSupported,
   getNotificationPermission,
@@ -13,62 +12,39 @@ import {
 } from '../lib/firebase';
 import { useRegisterPushToken } from '../lib/hooks';
 
-interface NotificationPermissionProps {
-  className?: string;
-}
-
-export function NotificationPermission({ className }: NotificationPermissionProps) {
+export function NotificationPermission() {
   const [permission, setPermission] = useState<NotificationPermission | null>(null);
-  const [isSupported, setIsSupported] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [showBanner, setShowBanner] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
   const registerToken = useRegisterPushToken();
 
   useEffect(() => {
-    // Initialize Firebase
+    if (!isNotificationSupported()) return;
+
     initializeFirebaseApp();
+    const currentPermission = getNotificationPermission();
+    setPermission(currentPermission);
 
-    // Check support and permission
-    const supported = isNotificationSupported();
-    setIsSupported(supported);
-
-    if (supported) {
-      const currentPermission = getNotificationPermission();
-      setPermission(currentPermission);
-
-      // Show banner if permission not yet requested
-      if (currentPermission === 'default') {
-        // Delay showing banner to not overwhelm new users
-        const timer = setTimeout(() => {
-          setShowBanner(true);
-        }, 3000);
-        return () => clearTimeout(timer);
-      } else if (currentPermission === 'granted') {
-        // Auto-register token if already granted
-        registerTokenSilently();
-      }
+    if (currentPermission === 'granted') {
+      registerTokenSilently();
+    } else if (currentPermission === 'default') {
+      const timer = setTimeout(() => setShowModal(true), 1500);
+      return () => clearTimeout(timer);
     }
   }, []);
 
-  // Handle foreground messages
   useEffect(() => {
     if (permission === 'granted') {
       const unsubscribe = onForegroundMessage((payload: unknown) => {
         const data = payload as { notification?: { title?: string; body?: string } };
-        // Show a toast or in-app notification for foreground messages
         if (data.notification) {
-          // You can integrate with a toast library here
-          console.log('Foreground notification:', data.notification);
+          new Notification(data.notification.title || 'Thông báo', {
+            body: data.notification.body,
+            icon: '/icon-192.png',
+          });
         }
       });
-
-      return () => {
-        if (unsubscribe) {
-          unsubscribe();
-        }
-      };
+      return () => { if (unsubscribe) unsubscribe(); };
     }
   }, [permission]);
 
@@ -79,112 +55,124 @@ export function NotificationPermission({ className }: NotificationPermissionProp
         await registerToken.mutateAsync(token);
       }
     } catch (err) {
-      console.error('Failed to register token:', err);
+      // Silent fail
     }
   };
 
-  const handleRequestPermission = async () => {
+  const handleAllow = async () => {
     setIsLoading(true);
-    setError(null);
-
     try {
       const result = await requestNotificationPermission();
       setPermission(result);
-
       if (result === 'granted') {
         const token = await getFCMToken();
         if (token) {
           await registerToken.mutateAsync(token);
         }
-        setShowBanner(false);
-      } else if (result === 'denied') {
-        setError('Thong bao bi tu choi. Vui long kiem tra cai dat trinh duyet.');
       }
+      setShowModal(false);
     } catch (err) {
-      console.error('Failed to request permission:', err);
-      setError('Khong the bat thong bao. Vui long thu lai.');
+      // Silent fail
     } finally {
       setIsLoading(false);
     }
   };
 
-  const dismissBanner = () => {
-    setShowBanner(false);
+  const handleDismiss = () => {
+    setShowModal(false);
   };
 
-  if (!isSupported) {
+  if (!showModal || permission === 'granted' || permission === 'denied') {
     return null;
   }
 
-  // Compact status indicator for header
-  if (permission === 'granted') {
-    return (
-      <div className={`flex items-center gap-1 text-green-600 ${className || ''}`}>
-        <Bell className="h-4 w-4" />
-        <Check className="h-3 w-3" />
-      </div>
-    );
-  }
-
-  if (permission === 'denied') {
-    return (
-      <div className={`flex items-center gap-1 text-gray-400 ${className || ''}`}>
-        <BellOff className="h-4 w-4" />
-      </div>
-    );
-  }
-
-  // Permission banner
-  if (!showBanner) {
-    return (
-      <button
-        onClick={() => setShowBanner(true)}
-        className={`flex items-center gap-1 text-gray-500 hover:text-gray-700 ${className || ''}`}
-      >
-        <Bell className="h-4 w-4" />
-      </button>
-    );
-  }
-
   return (
-    <div className="fixed bottom-20 left-4 right-4 z-50 animate-slide-up">
-      <div className="bg-white rounded-lg shadow-lg border p-4 max-w-md mx-auto">
-        <div className="flex items-start gap-3">
-          <div className="flex-shrink-0 bg-blue-100 rounded-full p-2">
-            <Bell className="h-5 w-5 text-blue-600" />
-          </div>
-          <div className="flex-1">
-            <h3 className="font-medium text-gray-900">Bat thong bao</h3>
-            <p className="text-sm text-gray-600 mt-1">
-              Nhan thong bao khi san pham sap het hang de kip thoi nhap them.
-            </p>
-            {error && (
-              <p className="text-sm text-red-600 mt-1">{error}</p>
-            )}
-            <div className="flex gap-2 mt-3">
-              <Button
-                onClick={handleRequestPermission}
-                disabled={isLoading}
-                size="sm"
-              >
-                {isLoading ? 'Dang xu ly...' : 'Cho phep'}
-              </Button>
-              <Button
-                onClick={dismissBanner}
-                variant="ghost"
-                size="sm"
-              >
-                De sau
-              </Button>
-            </div>
-          </div>
-          <button
-            onClick={dismissBanner}
-            className="flex-shrink-0 text-gray-400 hover:text-gray-600"
-          >
-            <X className="h-5 w-5" />
-          </button>
+    <div
+      style={{
+        position: 'fixed',
+        top: '16px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        zIndex: 99999,
+        width: '90%',
+        maxWidth: '360px',
+      }}
+    >
+      <div
+        style={{
+          backgroundColor: 'white',
+          borderRadius: '12px',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+          padding: '16px',
+          display: 'flex',
+          gap: '12px',
+          alignItems: 'flex-start',
+        }}
+      >
+        <div
+          style={{
+            backgroundColor: '#EEF2FF',
+            borderRadius: '50%',
+            padding: '10px',
+            flexShrink: 0,
+          }}
+        >
+          <Bell style={{ width: '20px', height: '20px', color: '#4F46E5' }} />
         </div>
+
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: 600, fontSize: '15px', color: '#111' }}>
+            Bật thông báo
+          </div>
+          <div style={{ fontSize: '13px', color: '#666', marginTop: '4px' }}>
+            Nhận thông báo khi sản phẩm sắp hết hàng để kịp thời nhập thêm.
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+            <button
+              onClick={handleAllow}
+              disabled={isLoading}
+              style={{
+                backgroundColor: '#4F46E5',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                padding: '8px 16px',
+                fontSize: '13px',
+                fontWeight: 500,
+                cursor: 'pointer',
+              }}
+            >
+              {isLoading ? 'Đang xử lý...' : 'Cho phép'}
+            </button>
+            <button
+              onClick={handleDismiss}
+              style={{
+                backgroundColor: 'transparent',
+                color: '#666',
+                border: 'none',
+                padding: '8px 12px',
+                fontSize: '13px',
+                cursor: 'pointer',
+              }}
+            >
+              Để sau
+            </button>
+          </div>
+        </div>
+
+        <button
+          onClick={handleDismiss}
+          style={{
+            background: 'none',
+            border: 'none',
+            padding: '4px',
+            cursor: 'pointer',
+            color: '#999',
+          }}
+        >
+          <X style={{ width: '18px', height: '18px' }} />
+        </button>
       </div>
     </div>
   );
