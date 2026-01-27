@@ -21,13 +21,21 @@ export class CustomersService {
   // ==================== CUSTOMERS ====================
 
   async createCustomer(dto: CreateCustomerDto) {
+    // Check name uniqueness
+    const existingName = await this.prisma.customer.findUnique({
+      where: { name: dto.name },
+    });
+    if (existingName) {
+      throw new ConflictException('Khách hàng với tên này đã tồn tại');
+    }
+
     // Check phone uniqueness if provided
     if (dto.phone) {
-      const existing = await this.prisma.customer.findFirst({
+      const existingPhone = await this.prisma.customer.findFirst({
         where: { phone: dto.phone },
       });
-      if (existing) {
-        throw new ConflictException('Customer with this phone already exists');
+      if (existingPhone) {
+        throw new ConflictException('Khách hàng với số điện thoại này đã tồn tại');
       }
     }
 
@@ -138,13 +146,23 @@ export class CustomersService {
       throw new NotFoundException('Customer not found');
     }
 
+    // Check name uniqueness if being updated
+    if (dto.name && dto.name !== existing.name) {
+      const nameExists = await this.prisma.customer.findUnique({
+        where: { name: dto.name },
+      });
+      if (nameExists) {
+        throw new ConflictException('Khách hàng với tên này đã tồn tại');
+      }
+    }
+
     // Check phone uniqueness if being updated
     if (dto.phone && dto.phone !== existing.phone) {
       const phoneExists = await this.prisma.customer.findFirst({
         where: { phone: dto.phone },
       });
       if (phoneExists) {
-        throw new ConflictException('Customer with this phone already exists');
+        throw new ConflictException('Khách hàng với số điện thoại này đã tồn tại');
       }
     }
 
