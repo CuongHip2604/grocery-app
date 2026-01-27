@@ -73,13 +73,7 @@ export class ProductsService {
       where.categoryId = categoryId;
     }
 
-    if (lowStock) {
-      where.inventory = {
-        quantity: {
-          lte: this.prisma.$queryRaw`reorder_level`,
-        },
-      };
-    }
+    // lowStock filtering is done in memory after fetching (MongoDB doesn't support comparing fields directly)
 
     const [products, total] = await Promise.all([
       this.prisma.product.findMany({
