@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useInventory, useInventorySummary, useRestockProduct, useAdjustInventory } from '../../../lib/hooks';
+import { useDebounce } from '../../../lib/use-debounce';
 import { restockSchema, RestockFormData, adjustInventorySchema, AdjustInventoryFormData } from '../../../lib/schemas';
 import { formatCurrency } from '../../../lib/utils';
 import { Button, Input, Label, Card, CardContent, Spinner, Badge } from '../../../components/ui';
@@ -16,9 +17,10 @@ export default function InventoryPage() {
   const [filter, setFilter] = useState<'all' | 'low'>('all');
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [adjustMode, setAdjustMode] = useState<AdjustMode>('restock');
+  const debouncedSearch = useDebounce(search, 300);
 
   const params: Record<string, string> = { limit: '50' };
-  if (search) params.search = search;
+  if (debouncedSearch) params.search = debouncedSearch;
   if (filter === 'low') params.lowStock = 'true';
 
   const { data: inventoryData, isLoading } = useInventory(params);

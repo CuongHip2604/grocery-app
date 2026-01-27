@@ -1,31 +1,33 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useCustomers } from '../../../lib/hooks';
+import { useDebounce } from '../../../lib/use-debounce';
 import { formatCurrency } from '../../../lib/utils';
 import { Button, Input, Card, CardContent, Spinner, Badge } from '../../../components/ui';
 
 export default function CustomersPage() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+  const debouncedSearch = useDebounce(search, 300);
+
+  // Reset page when search changes
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
 
   const params: Record<string, string> = {
     page: page.toString(),
     limit: '20',
   };
-  if (search) {
-    params.search = search;
+  if (debouncedSearch) {
+    params.search = debouncedSearch;
   }
 
   const { data, isLoading } = useCustomers(params);
   const customers = data?.data || [];
   const hasMore = data ? data.meta.page * data.meta.limit < data.meta.total : false;
-
-  function handleSearch(value: string) {
-    setSearch(value);
-    setPage(1);
-  }
 
   return (
     <div className="p-4">
@@ -41,7 +43,7 @@ export default function CustomersPage() {
           type="search"
           placeholder="Tìm khách hàng..."
           value={search}
-          onChange={(e) => handleSearch(e.target.value)}
+          onChange={(e) => setSearch(e.target.value)}
         />
       </div>
 
