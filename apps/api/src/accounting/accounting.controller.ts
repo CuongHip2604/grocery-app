@@ -8,8 +8,8 @@ import {
   Param,
   Query,
   UseGuards,
-  ParseUUIDPipe,
 } from '@nestjs/common';
+import { ParseObjectIdPipe } from '../common/pipes/parse-objectid.pipe';
 import { AccountingService } from './accounting.service';
 import {
   CreateExpenseDto,
@@ -53,14 +53,14 @@ export class AccountingController {
   }
 
   @Get('expenses/:id')
-  async findExpenseById(@Param('id', ParseUUIDPipe) id: string) {
+  async findExpenseById(@Param('id', ParseObjectIdPipe) id: string) {
     const expense = await this.accountingService.findExpenseById(id);
     return { data: expense };
   }
 
   @Put('expenses/:id')
   async updateExpense(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', ParseObjectIdPipe) id: string,
     @Body() dto: UpdateExpenseDto
   ) {
     const expense = await this.accountingService.updateExpense(id, dto);
@@ -68,7 +68,7 @@ export class AccountingController {
   }
 
   @Delete('expenses/:id')
-  async deleteExpense(@Param('id', ParseUUIDPipe) id: string) {
+  async deleteExpense(@Param('id', ParseObjectIdPipe) id: string) {
     return this.accountingService.deleteExpense(id);
   }
 
@@ -86,14 +86,14 @@ export class AccountingController {
   }
 
   @Get('supplier-payments/:id')
-  async findSupplierPaymentById(@Param('id', ParseUUIDPipe) id: string) {
+  async findSupplierPaymentById(@Param('id', ParseObjectIdPipe) id: string) {
     const payment = await this.accountingService.findSupplierPaymentById(id);
     return { data: payment };
   }
 
   @Put('supplier-payments/:id')
   async updateSupplierPayment(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', ParseObjectIdPipe) id: string,
     @Body() dto: UpdateSupplierPaymentDto
   ) {
     const payment = await this.accountingService.updateSupplierPayment(id, dto);
@@ -101,13 +101,13 @@ export class AccountingController {
   }
 
   @Post('supplier-payments/:id/mark-paid')
-  async markSupplierPaymentPaid(@Param('id', ParseUUIDPipe) id: string) {
+  async markSupplierPaymentPaid(@Param('id', ParseObjectIdPipe) id: string) {
     const payment = await this.accountingService.markSupplierPaymentPaid(id);
     return { data: payment };
   }
 
   @Delete('supplier-payments/:id')
-  async deleteSupplierPayment(@Param('id', ParseUUIDPipe) id: string) {
+  async deleteSupplierPayment(@Param('id', ParseObjectIdPipe) id: string) {
     return this.accountingService.deleteSupplierPayment(id);
   }
 

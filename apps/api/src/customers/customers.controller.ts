@@ -8,8 +8,8 @@ import {
   Param,
   Query,
   UseGuards,
-  ParseUUIDPipe,
 } from '@nestjs/common';
+import { ParseObjectIdPipe } from '../common/pipes/parse-objectid.pipe';
 import { CustomersService } from './customers.service';
 import {
   CreateCustomerDto,
@@ -47,14 +47,14 @@ export class CustomersController {
   }
 
   @Get(':id')
-  async findCustomerById(@Param('id', ParseUUIDPipe) id: string) {
+  async findCustomerById(@Param('id', ParseObjectIdPipe) id: string) {
     const customer = await this.customersService.findCustomerById(id);
     return { data: customer };
   }
 
   @Put(':id')
   async updateCustomer(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', ParseObjectIdPipe) id: string,
     @Body() dto: UpdateCustomerDto
   ) {
     const customer = await this.customersService.updateCustomer(id, dto);
@@ -62,7 +62,7 @@ export class CustomersController {
   }
 
   @Delete(':id')
-  async deleteCustomer(@Param('id', ParseUUIDPipe) id: string) {
+  async deleteCustomer(@Param('id', ParseObjectIdPipe) id: string) {
     return this.customersService.deleteCustomer(id);
   }
 
@@ -70,7 +70,7 @@ export class CustomersController {
 
   @Get(':id/ledger')
   async getCustomerLedger(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', ParseObjectIdPipe) id: string,
     @Query() query: LedgerQueryDto
   ) {
     return this.customersService.getCustomerLedger(id, query);
@@ -78,7 +78,7 @@ export class CustomersController {
 
   @Post(':id/payments')
   async recordPayment(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', ParseObjectIdPipe) id: string,
     @Body() dto: RecordPaymentDto
   ) {
     return this.customersService.recordPayment(id, dto);

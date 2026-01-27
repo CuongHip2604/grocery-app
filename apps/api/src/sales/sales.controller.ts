@@ -6,8 +6,8 @@ import {
   Param,
   Query,
   UseGuards,
-  ParseUUIDPipe,
 } from '@nestjs/common';
+import { ParseObjectIdPipe } from '../common/pipes/parse-objectid.pipe';
 import { SalesService } from './sales.service';
 import { CreateSaleDto, SalesQueryDto, DailySummaryQueryDto } from './dto/sales.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -39,13 +39,13 @@ export class SalesController {
   }
 
   @Get(':id')
-  async findSaleById(@Param('id', ParseUUIDPipe) id: string) {
+  async findSaleById(@Param('id', ParseObjectIdPipe) id: string) {
     const sale = await this.salesService.findSaleById(id);
     return { data: sale };
   }
 
   @Post(':id/void')
-  async voidSale(@Param('id', ParseUUIDPipe) id: string) {
+  async voidSale(@Param('id', ParseObjectIdPipe) id: string) {
     const sale = await this.salesService.voidSale(id);
     return { data: sale };
   }

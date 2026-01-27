@@ -8,11 +8,11 @@ import {
   Param,
   Query,
   UseGuards,
-  ParseUUIDPipe,
   UseInterceptors,
   UploadedFile,
   BadRequestException,
 } from '@nestjs/common';
+import { ParseObjectIdPipe } from '../common/pipes/parse-objectid.pipe';
 import { FileInterceptor } from '@nestjs/platform-express';
 
 interface UploadedFileType {
@@ -90,14 +90,14 @@ export class ProductsController {
   }
 
   @Get(':id')
-  async findProductById(@Param('id', ParseUUIDPipe) id: string) {
+  async findProductById(@Param('id', ParseObjectIdPipe) id: string) {
     const product = await this.productsService.findProductById(id);
     return { data: product };
   }
 
   @Put(':id')
   async updateProduct(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', ParseObjectIdPipe) id: string,
     @Body() dto: UpdateProductDto
   ) {
     const product = await this.productsService.updateProduct(id, dto);
@@ -105,7 +105,7 @@ export class ProductsController {
   }
 
   @Delete(':id')
-  async deleteProduct(@Param('id', ParseUUIDPipe) id: string) {
+  async deleteProduct(@Param('id', ParseObjectIdPipe) id: string) {
     return this.productsService.deleteProduct(id);
   }
 }
@@ -127,14 +127,14 @@ export class CategoriesController {
   }
 
   @Get(':id')
-  async findCategoryById(@Param('id', ParseUUIDPipe) id: string) {
+  async findCategoryById(@Param('id', ParseObjectIdPipe) id: string) {
     const category = await this.productsService.findCategoryById(id);
     return { data: category };
   }
 
   @Put(':id')
   async updateCategory(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', ParseObjectIdPipe) id: string,
     @Body() dto: UpdateCategoryDto
   ) {
     const category = await this.productsService.updateCategory(id, dto);
@@ -142,7 +142,7 @@ export class CategoriesController {
   }
 
   @Delete(':id')
-  async deleteCategory(@Param('id', ParseUUIDPipe) id: string) {
+  async deleteCategory(@Param('id', ParseObjectIdPipe) id: string) {
     return this.productsService.deleteCategory(id);
   }
 }

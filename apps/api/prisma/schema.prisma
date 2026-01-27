@@ -75,7 +75,7 @@ model Inventory {
 model Customer {
   id           String         @id @default(auto()) @map("_id") @db.ObjectId
   name         String
-  phone        String?        @unique
+  phone        String?
   email        String?
   address      String?
   notes        String?

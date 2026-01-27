@@ -7,8 +7,8 @@ import {
   Param,
   Query,
   UseGuards,
-  ParseUUIDPipe,
 } from '@nestjs/common';
+import { ParseObjectIdPipe } from '../common/pipes/parse-objectid.pipe';
 import { InventoryService } from './inventory.service';
 import {
   AdjustInventoryDto,
@@ -38,13 +38,13 @@ export class InventoryController {
   }
 
   @Get('product/:productId')
-  async getByProductId(@Param('productId', ParseUUIDPipe) productId: string) {
+  async getByProductId(@Param('productId', ParseObjectIdPipe) productId: string) {
     return this.inventoryService.getByProductId(productId);
   }
 
   @Put('product/:productId/adjust')
   async adjustInventory(
-    @Param('productId', ParseUUIDPipe) productId: string,
+    @Param('productId', ParseObjectIdPipe) productId: string,
     @Body() dto: AdjustInventoryDto
   ) {
     return this.inventoryService.adjustInventory(productId, dto);
@@ -52,7 +52,7 @@ export class InventoryController {
 
   @Post('product/:productId/restock')
   async restock(
-    @Param('productId', ParseUUIDPipe) productId: string,
+    @Param('productId', ParseObjectIdPipe) productId: string,
     @Body() dto: RestockDto
   ) {
     return this.inventoryService.restock(productId, dto);

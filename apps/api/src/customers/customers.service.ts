@@ -23,7 +23,7 @@ export class CustomersService {
   async createCustomer(dto: CreateCustomerDto) {
     // Check phone uniqueness if provided
     if (dto.phone) {
-      const existing = await this.prisma.customer.findUnique({
+      const existing = await this.prisma.customer.findFirst({
         where: { phone: dto.phone },
       });
       if (existing) {
@@ -140,7 +140,7 @@ export class CustomersService {
 
     // Check phone uniqueness if being updated
     if (dto.phone && dto.phone !== existing.phone) {
-      const phoneExists = await this.prisma.customer.findUnique({
+      const phoneExists = await this.prisma.customer.findFirst({
         where: { phone: dto.phone },
       });
       if (phoneExists) {

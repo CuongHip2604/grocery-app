@@ -120,26 +120,23 @@ async function main() {
   }
 
   // Create sample customers
-  const customers = await Promise.all([
-    prisma.customer.upsert({
-      where: { phone: '+1234567890' },
-      update: {},
-      create: {
-        name: 'John Doe',
-        phone: '+1234567890',
-        email: 'john@example.com',
-      },
-    }),
-    prisma.customer.upsert({
-      where: { phone: '+0987654321' },
-      update: {},
-      create: {
-        name: 'Jane Smith',
-        phone: '+0987654321',
-        notes: 'Regular customer',
-      },
-    }),
-  ]);
+  const customersData = [
+    { name: 'John Doe', phone: '+1234567890', email: 'john@example.com' },
+    { name: 'Jane Smith', phone: '+0987654321', notes: 'Regular customer' },
+  ];
+
+  const customers = [];
+  for (const data of customersData) {
+    const existing = await prisma.customer.findFirst({
+      where: { phone: data.phone },
+    });
+    if (!existing) {
+      const customer = await prisma.customer.create({ data });
+      customers.push(customer);
+    } else {
+      customers.push(existing);
+    }
+  }
   console.log('Created customers:', customers.map((c) => c.name).join(', '));
 
   console.log('Seeding completed!');
