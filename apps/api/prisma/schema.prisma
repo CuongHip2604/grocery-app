@@ -1,4 +1,4 @@
-// Grocery Store Management App - Prisma Schema
+// Grocery Store Management App - Prisma Schema (MongoDB)
 // Documentation: https://pris.ly/d/prisma-schema
 
 generator client {
@@ -6,9 +6,8 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
 }
 
 // ============================================
@@ -16,7 +15,7 @@ datasource db {
 // ============================================
 
 model User {
-  id           String   @id @default(uuid())
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
   email        String   @unique
   passwordHash String   @map("password_hash")
   createdAt    DateTime @default(now()) @map("created_at")
@@ -30,7 +29,7 @@ model User {
 // ============================================
 
 model Category {
-  id          String    @id @default(uuid())
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
   name        String    @unique
   description String?
   products    Product[]
@@ -41,27 +40,27 @@ model Category {
 }
 
 model Product {
-  id            String      @id @default(uuid())
-  barcode       String      @unique
+  id            String     @id @default(auto()) @map("_id") @db.ObjectId
+  barcode       String     @unique
   name          String
   description   String?
-  price         Decimal     @db.Decimal(10, 2)
-  cost          Decimal     @db.Decimal(10, 2)
-  categoryId    String?     @map("category_id")
-  category      Category?   @relation(fields: [categoryId], references: [id])
-  reorderLevel  Int         @default(5) @map("reorder_level")
-  isCustomLabel Boolean     @default(false) @map("is_custom_label")
+  price         Float
+  cost          Float
+  categoryId    String?    @map("category_id") @db.ObjectId
+  category      Category?  @relation(fields: [categoryId], references: [id])
+  reorderLevel  Int        @default(5) @map("reorder_level")
+  isCustomLabel Boolean    @default(false) @map("is_custom_label")
   inventory     Inventory?
   saleItems     SaleItem[]
-  createdAt     DateTime    @default(now()) @map("created_at")
-  updatedAt     DateTime    @updatedAt @map("updated_at")
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
 
   @@map("products")
 }
 
 model Inventory {
-  id          String   @id @default(uuid())
-  productId   String   @unique @map("product_id")
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  productId   String   @unique @map("product_id") @db.ObjectId
   product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   quantity    Int      @default(0)
   lastUpdated DateTime @default(now()) @map("last_updated")
@@ -74,7 +73,7 @@ model Inventory {
 // ============================================
 
 model Customer {
-  id           String         @id @default(uuid())
+  id           String         @id @default(auto()) @map("_id") @db.ObjectId
   name         String
   phone        String?        @unique
   email        String?
@@ -89,14 +88,14 @@ model Customer {
 }
 
 model Sale {
-  id           String         @id @default(uuid())
-  customerId   String?        @map("customer_id")
+  id           String         @id @default(auto()) @map("_id") @db.ObjectId
+  customerId   String?        @map("customer_id") @db.ObjectId
   customer     Customer?      @relation(fields: [customerId], references: [id])
-  totalAmount  Decimal        @db.Decimal(10, 2) @map("total_amount")
+  totalAmount  Float          @map("total_amount")
   paymentType  PaymentType    @default(CASH) @map("payment_type")
   status       SaleStatus     @default(COMPLETED)
   syncStatus   SyncStatus     @default(SYNCED) @map("sync_status")
-  syncId       String?        @unique @map("sync_id") // For offline sync
+  syncId       String?        @unique @map("sync_id")
   items        SaleItem[]
   creditLedger CreditLedger[]
   createdAt    DateTime       @default(now()) @map("created_at")
@@ -106,14 +105,14 @@ model Sale {
 }
 
 model SaleItem {
-  id        String  @id @default(uuid())
-  saleId    String  @map("sale_id")
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  saleId    String  @map("sale_id") @db.ObjectId
   sale      Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
-  productId String  @map("product_id")
+  productId String  @map("product_id") @db.ObjectId
   product   Product @relation(fields: [productId], references: [id])
   quantity  Int
-  unitPrice Decimal @db.Decimal(10, 2) @map("unit_price")
-  subtotal  Decimal @db.Decimal(10, 2)
+  unitPrice Float   @map("unit_price")
+  subtotal  Float
 
   @@map("sale_items")
 }
@@ -123,14 +122,14 @@ model SaleItem {
 // ============================================
 
 model CreditLedger {
-  id          String          @id @default(uuid())
-  customerId  String          @map("customer_id")
+  id          String          @id @default(auto()) @map("_id") @db.ObjectId
+  customerId  String          @map("customer_id") @db.ObjectId
   customer    Customer        @relation(fields: [customerId], references: [id])
-  saleId      String?         @map("sale_id")
+  saleId      String?         @map("sale_id") @db.ObjectId
   sale        Sale?           @relation(fields: [saleId], references: [id])
   type        CreditEntryType
-  amount      Decimal         @db.Decimal(10, 2)
-  balance     Decimal         @db.Decimal(10, 2) // Running balance after this entry
+  amount      Float
+  balance     Float
   description String?
   createdAt   DateTime        @default(now()) @map("created_at")
 
@@ -142,9 +141,9 @@ model CreditLedger {
 // ============================================
 
 model Expense {
-  id          String   @id @default(uuid())
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
   category    String
-  amount      Decimal  @db.Decimal(10, 2)
+  amount      Float
   description String?
   date        DateTime
   createdAt   DateTime @default(now()) @map("created_at")
@@ -153,9 +152,9 @@ model Expense {
 }
 
 model SupplierPayment {
-  id           String        @id @default(uuid())
+  id           String        @id @default(auto()) @map("_id") @db.ObjectId
   supplierName String        @map("supplier_name")
-  amount       Decimal       @db.Decimal(10, 2)
+  amount       Float
   description  String?
   dueDate      DateTime?     @map("due_date")
   paidDate     DateTime?     @map("paid_date")
