@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: grocery-api
+    runtime: node
+    region: singapore
+    rootDir: ./
+    buildCommand: npm install && npx prisma generate --schema=apps/api/prisma/schema.prisma && npx nx build api
+    startCommand: node dist/apps/api/main.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: API_PORT
+        value: 10000
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_EXPIRES_IN
+        value: 1d
+      - key: JWT_REFRESH_EXPIRES_IN
+        value: 7d
+      - key: CORS_ORIGIN
+        sync: false

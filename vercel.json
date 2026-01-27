@@ -1,0 +1,8 @@
+{
+  "version": 2,
+  "buildCommand": "npx nx build web",
+  "outputDirectory": "dist/apps/web/.next",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "ignoreCommand": "exit 0"
+}

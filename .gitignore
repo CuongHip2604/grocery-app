@@ -52,3 +52,5 @@ out
 
 # ngrok
 ngrok.yml
+.vercel
+.env*.local

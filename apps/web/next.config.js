@@ -13,10 +13,11 @@ const nextConfig = {
 
   // Proxy API requests to the backend
   async rewrites() {
+    const apiUrl = process.env.API_URL || 'http://localhost:3001';
     return [
       {
         source: '/api/:path*',
-        destination: 'http://localhost:3001/api/:path*',
+        destination: `${apiUrl}/api/:path*`,
       },
     ];
   },
