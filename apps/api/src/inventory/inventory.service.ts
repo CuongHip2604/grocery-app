@@ -9,10 +9,14 @@ import {
   RestockDto,
   InventoryQueryDto,
 } from './dto/inventory.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class InventoryService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationsService: NotificationsService
+  ) {}
 
   async findAll(query: InventoryQueryDto) {
     const {
@@ -208,6 +212,23 @@ export class InventoryService {
 
     const cost = Number(product.cost);
     const price = Number(product.price);
+    const isLowStock = newQuantity <= product.reorderLevel;
+
+    // Send low stock notification if quantity dropped below reorder level
+    if (isLowStock && newQuantity < currentQuantity) {
+      this.notificationsService
+        .sendLowStockNotification([
+          {
+            id: product.id,
+            name: product.name,
+            quantity: newQuantity,
+            reorderLevel: product.reorderLevel,
+          },
+        ])
+        .catch(() => {
+          // Log but don't fail the operation
+        });
+    }
 
     return {
       data: {
@@ -224,7 +245,7 @@ export class InventoryService {
         reason: dto.reason || null,
         value: newQuantity * cost,
         retailValue: newQuantity * price,
-        isLowStock: newQuantity <= product.reorderLevel,
+        isLowStock,
         lastUpdated: inventory.lastUpdated.toISOString(),
       },
     };

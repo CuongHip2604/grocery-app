@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../lib/auth-context';
 import { BottomNav } from '../../components/bottom-nav';
 import { Spinner } from '../../components/ui';
+import { NotificationPermission } from '../../components/notification-permission';
 
 export default function ProtectedLayout({
   children,
@@ -36,6 +37,7 @@ export default function ProtectedLayout({
     <div className="min-h-screen pb-20">
       <main>{children}</main>
       <BottomNav />
+      <NotificationPermission />
     </div>
   );
 }

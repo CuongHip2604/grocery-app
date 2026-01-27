@@ -7,10 +7,15 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateSaleDto, SalesQueryDto } from './dto/sales.dto';
 import { PaymentType, SaleStatus, CreditEntryType } from '@prisma/client';
+import { NotificationsService } from '../notifications/notifications.service';
+import { LowStockProduct } from '../notifications/dto/notifications.dto';
 
 @Injectable()
 export class SalesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationsService: NotificationsService
+  ) {}
 
   async createSale(dto: CreateSaleDto) {
     const { customerId, paymentType, items, syncId } = dto;
@@ -139,7 +144,37 @@ export class SalesService {
       return newSale;
     });
 
+    // Check for low stock products after the sale
+    this.checkAndNotifyLowStock(items.map((item) => item.productId)).catch(
+      () => {
+        // Log but don't fail the operation
+      }
+    );
+
     return this.transformSale(sale);
+  }
+
+  private async checkAndNotifyLowStock(productIds: string[]) {
+    const products = await this.prisma.product.findMany({
+      where: { id: { in: productIds } },
+      include: { inventory: true },
+    });
+
+    const lowStockProducts: LowStockProduct[] = products
+      .filter((product) => {
+        const quantity = product.inventory?.quantity || 0;
+        return quantity <= product.reorderLevel;
+      })
+      .map((product) => ({
+        id: product.id,
+        name: product.name,
+        quantity: product.inventory?.quantity || 0,
+        reorderLevel: product.reorderLevel,
+      }));
+
+    if (lowStockProducts.length > 0) {
+      await this.notificationsService.sendLowStockNotification(lowStockProducts);
+    }
   }
 
   async findAllSales(query: SalesQueryDto) {

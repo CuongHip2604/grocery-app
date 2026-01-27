@@ -344,3 +344,16 @@ export function useCreateExpense() {
     },
   });
 }
+
+// Push Notifications
+export function useRegisterPushToken() {
+  return useMutation({
+    mutationFn: (token: string) => api.registerPushToken(token),
+  });
+}
+
+export function useUnregisterPushToken() {
+  return useMutation({
+    mutationFn: (token: string) => api.unregisterPushToken(token),
+  });
+}

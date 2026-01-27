@@ -389,6 +389,23 @@ class ApiClient {
     const { data } = await this.client.get<{ data: PayablesReport }>('/api/accounting/reports/payables');
     return data;
   }
+
+  // Push Notifications
+  async registerPushToken(token: string) {
+    const { data } = await this.client.post<{ data: { id: string; token: string } }>(
+      '/api/notifications/register',
+      { token }
+    );
+    return data;
+  }
+
+  async unregisterPushToken(token: string) {
+    const { data } = await this.client.delete<{ message: string }>(
+      '/api/notifications/unregister',
+      { data: { token } }
+    );
+    return data;
+  }
 }
 
 export const api = new ApiClient(API_BASE);
