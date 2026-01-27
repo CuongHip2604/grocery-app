@@ -31,7 +31,7 @@ export default function EditProductPage() {
       price: '0',
       cost: '0',
       categoryId: '',
-      reorderLevel: '10',
+      reorderLevel: '5',
     },
   });
 
@@ -175,13 +175,16 @@ export default function EditProductPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="reorderLevel">Mức đặt lại</Label>
+              <Label htmlFor="reorderLevel">Mức đặt hàng lại</Label>
               <Input
                 id="reorderLevel"
                 type="number"
                 min="0"
                 {...register('reorderLevel')}
               />
+              <p className="text-xs text-muted-foreground">
+                Cảnh báo &quot;Sắp hết&quot; khi tồn kho ≤ mức này
+              </p>
               {errors.reorderLevel && (
                 <p className="text-sm text-destructive">{errors.reorderLevel.message}</p>
               )}

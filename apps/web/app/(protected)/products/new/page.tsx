@@ -30,7 +30,7 @@ export default function NewProductPage() {
       price: '0',
       cost: '0',
       categoryId: '',
-      reorderLevel: '10',
+      reorderLevel: '5',
       initialStock: '0',
     },
   });
@@ -166,13 +166,16 @@ export default function NewProductPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="reorderLevel">Mức đặt lại</Label>
+                  <Label htmlFor="reorderLevel">Mức đặt hàng lại</Label>
                   <Input
                     id="reorderLevel"
                     type="number"
                     min="0"
                     {...register('reorderLevel')}
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Cảnh báo &quot;Sắp hết&quot; khi tồn kho ≤ mức này
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="initialStock">Tồn kho ban đầu</Label>
