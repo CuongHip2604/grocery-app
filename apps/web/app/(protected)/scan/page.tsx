@@ -138,6 +138,7 @@ export default function ScanPage() {
       {showScanner && (
         <BarcodeScanner
           key={scannerKey}
+          mode="sell"
           onScan={handleBarcodeScan}
           onClose={() => setShowScanner(false)}
         />

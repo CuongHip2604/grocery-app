@@ -424,6 +424,7 @@ export interface CreateCategoryInput {
 
 export interface CreateProductInput {
   name: string;
+  barcode?: string;
   description?: string;
   price: number;
   cost: number;

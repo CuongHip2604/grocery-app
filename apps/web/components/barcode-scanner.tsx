@@ -1,32 +1,28 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { BrowserMultiFormatReader, BrowserCodeReader, BarcodeFormat, IScannerControls } from '@zxing/browser';
-import { DecodeHintType } from '@zxing/library';
+import { useState, useCallback } from 'react';
+import { Scanner } from '@yudiel/react-qr-scanner';
 import { Button } from './ui';
+
+export type ScanMode = 'sell' | 'import';
 
 interface BarcodeScannerProps {
   onScan: (barcode: string) => void;
   onClose: () => void;
+  mode?: ScanMode;
+  title?: string;
 }
 
-// Helper to safely stop scanner
-function stopScanner(controls: IScannerControls | null) {
-  if (controls) {
-    try {
-      controls.stop();
-    } catch (e) {
-      console.debug('Error stopping scanner:', e);
-    }
-  }
-}
-
-export function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps) {
+export function BarcodeScanner({
+  onScan,
+  onClose,
+  mode = 'sell',
+  title
+}: BarcodeScannerProps) {
   const [error, setError] = useState<string>('');
-  const [isStarting, setIsStarting] = useState(true);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const controlsRef = useRef<IScannerControls | null>(null);
-  const hasScannedRef = useRef(false);
+  const [isPaused, setIsPaused] = useState(false);
+
+  const displayTitle = title || (mode === 'import' ? 'Quét mã để nhập hàng' : 'Quét mã để bán hàng');
 
   const playBeep = useCallback(() => {
     try {
@@ -44,150 +40,79 @@ export function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps) {
     }
   }, []);
 
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    let isMounted = true;
-    let localControls: IScannerControls | null = null;
-
-    const initScanner = async () => {
-      try {
-        // Configure hints for better barcode detection
-        const hints = new Map();
-        hints.set(DecodeHintType.POSSIBLE_FORMATS, [
-          BarcodeFormat.QR_CODE,  // QR code first (priority)
-          BarcodeFormat.EAN_13,
-          BarcodeFormat.EAN_8,
-          BarcodeFormat.UPC_A,
-          BarcodeFormat.UPC_E,
-          BarcodeFormat.CODE_128,
-          BarcodeFormat.CODE_39,
-          BarcodeFormat.CODE_93,
-          BarcodeFormat.CODABAR,
-          BarcodeFormat.ITF,
-        ]);
-        hints.set(DecodeHintType.TRY_HARDER, true);
-
-        const reader = new BrowserMultiFormatReader(hints);
-
-        // Get available video devices
-        const devices = await BrowserCodeReader.listVideoInputDevices();
-
-        if (devices.length === 0) {
-          throw new Error('No camera found');
-        }
-
-        // Always prefer back camera (environment facing)
-        const backCamera = devices.find((d: MediaDeviceInfo) =>
-          d.label.toLowerCase().includes('back') ||
-          d.label.toLowerCase().includes('rear') ||
-          d.label.toLowerCase().includes('environment')
-        );
-
-        // Use back camera if found, otherwise use the last device (usually back camera on mobile)
-        const deviceId = backCamera?.deviceId || devices[devices.length - 1].deviceId;
-
-        if (!isMounted) return;
-
-        // Start continuous decoding
-        const controls = await reader.decodeFromVideoDevice(
-          deviceId,
-          video,
-          (result, err) => {
-            if (!isMounted || hasScannedRef.current) return;
-
-            if (result) {
-              const code = result.getText();
-              if (code && code.length >= 4) {
-                hasScannedRef.current = true;
-                playBeep();
-
-                // Stop the scanner
-                stopScanner(localControls);
-
-                onScan(code);
-              }
-            }
-
-            // Ignore decode errors (no barcode in view)
-            if (err && err.name !== 'NotFoundException') {
-              console.debug('Scan error:', err.message);
-            }
-          }
-        );
-
-        // Store controls for cleanup
-        localControls = controls;
-
-        if (isMounted) {
-          controlsRef.current = controls;
-          setIsStarting(false);
-        } else {
-          // Component unmounted during init, clean up
-          stopScanner(controls);
-        }
-      } catch (err) {
-        console.error('Scanner init error:', err);
-        if (isMounted) {
-          setError(
-            err instanceof Error
-              ? err.message
-              : 'Failed to start camera. Please ensure camera permissions are granted.'
-          );
-          setIsStarting(false);
-        }
+  const handleScan = useCallback((result: { rawValue: string }[]) => {
+    if (result && result.length > 0 && !isPaused) {
+      const code = result[0].rawValue;
+      if (code && code.length >= 4) {
+        setIsPaused(true);
+        playBeep();
+        onScan(code);
       }
-    };
+    }
+  }, [isPaused, onScan, playBeep]);
 
-    initScanner();
-
-    return () => {
-      isMounted = false;
-      stopScanner(controlsRef.current);
-      controlsRef.current = null;
-    };
-  }, [onScan, playBeep]);
-
-  const handleClose = useCallback(() => {
-    stopScanner(controlsRef.current);
-    controlsRef.current = null;
-    onClose();
-  }, [onClose]);
+  const handleError = useCallback((err: unknown) => {
+    console.error('Scanner error:', err);
+    if (err instanceof Error) {
+      if (err.name === 'NotAllowedError') {
+        setError('Không có quyền truy cập camera. Vui lòng cấp quyền camera.');
+      } else if (err.name === 'NotFoundError') {
+        setError('Không tìm thấy camera.');
+      } else {
+        setError(err.message);
+      }
+    } else {
+      setError('Không thể khởi động camera.');
+    }
+  }, []);
 
   return (
     <div className="fixed inset-0 z-50 bg-black">
       <div className="flex h-full flex-col">
+        {/* Header */}
         <div className="flex items-center justify-between bg-black/80 p-4">
-          <h2 className="text-lg font-semibold text-white">Scan Barcode</h2>
-          <Button variant="ghost" size="sm" onClick={handleClose} className="text-white hover:bg-white/20">
-            Close
+          <h2 className="text-lg font-semibold text-white">{displayTitle}</h2>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClose}
+            className="text-white hover:bg-white/20"
+          >
+            Đóng
           </Button>
         </div>
 
+        {/* Scanner */}
         <div className="relative flex-1 overflow-hidden">
-          {isStarting && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center bg-black">
-              <p className="text-white">Starting camera...</p>
-            </div>
-          )}
-
-          {error && (
+          {error ? (
             <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black p-4">
               <p className="mb-4 text-center text-red-400">{error}</p>
-              <Button onClick={handleClose}>Go Back</Button>
+              <Button onClick={onClose}>Quay lại</Button>
             </div>
-          )}
-
-          <video
-            ref={videoRef}
-            className="h-full w-full object-cover"
-            playsInline
-            muted
-          />
-
-          {!error && !isStarting && (
+          ) : (
             <>
+              <Scanner
+                onScan={handleScan}
+                onError={handleError}
+                constraints={{
+                  facingMode: 'environment',
+                }}
+                styles={{
+                  container: {
+                    width: '100%',
+                    height: '100%',
+                  },
+                  video: {
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                  },
+                }}
+                components={{
+                  torch: true,
+                }}
+              />
+
               {/* Scanning overlay */}
               <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
                 <div className="relative h-64 w-64 border-2 border-white/70 rounded-lg overflow-hidden">
@@ -201,13 +126,24 @@ export function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps) {
                 </div>
               </div>
 
+              {/* Mode indicator */}
+              <div className="absolute top-4 left-4">
+                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                  mode === 'import'
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-green-500 text-white'
+                }`}>
+                  {mode === 'import' ? 'Nhập hàng' : 'Bán hàng'}
+                </span>
+              </div>
+
               {/* Instructions */}
               <div className="absolute bottom-8 left-0 right-0 text-center space-y-2">
                 <p className="text-white bg-black/60 mx-auto px-4 py-2 rounded-lg inline-block">
-                  Center QR code or barcode in the frame
+                  Đưa mã vạch hoặc QR code vào khung hình
                 </p>
                 <p className="text-xs text-white/60">
-                  Hold steady • Good lighting • 10-30cm distance
+                  Giữ yên • Đủ ánh sáng • Khoảng cách 10-30cm
                 </p>
               </div>
             </>

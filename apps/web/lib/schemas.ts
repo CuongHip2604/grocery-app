@@ -11,6 +11,7 @@ export type LoginFormData = z.infer<typeof loginSchema>;
 // Product schemas - use string inputs, convert on submit
 export const createProductSchema = z.object({
   name: z.string().min(1, 'Name is required'),
+  barcode: z.string().optional(),
   description: z.string().optional(),
   price: z.string().refine((val) => !isNaN(Number(val)) && Number(val) >= 0, 'Price must be a non-negative number'),
   cost: z.string().refine((val) => !isNaN(Number(val)) && Number(val) >= 0, 'Cost must be a non-negative number'),
@@ -24,6 +25,7 @@ export type CreateProductFormData = z.infer<typeof createProductSchema>;
 // Converted product data for API submission
 export interface CreateProductPayload {
   name: string;
+  barcode?: string;
   description?: string;
   price: number;
   cost: number;
@@ -35,6 +37,7 @@ export interface CreateProductPayload {
 export function convertProductFormData(data: CreateProductFormData): CreateProductPayload {
   return {
     name: data.name,
+    barcode: data.barcode || undefined,
     description: data.description,
     price: Number(data.price),
     cost: Number(data.cost),

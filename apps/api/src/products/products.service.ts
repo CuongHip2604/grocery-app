@@ -22,10 +22,20 @@ export class ProductsService {
   // ==================== PRODUCTS ====================
 
   async createProduct(dto: CreateProductDto) {
-    // Auto-generate barcode
-    const barcode = this.generateBarcode();
+    // Use provided barcode or auto-generate one
+    const barcode = dto.barcode || this.generateBarcode();
 
-    const { initialStock, ...productData } = dto;
+    // Check if barcode already exists
+    if (dto.barcode) {
+      const existing = await this.prisma.product.findUnique({
+        where: { barcode: dto.barcode },
+      });
+      if (existing) {
+        throw new ConflictException(`Product with barcode "${dto.barcode}" already exists`);
+      }
+    }
+
+    const { initialStock, barcode: _, ...productData } = dto;
 
     const product = await this.prisma.product.create({
       data: {
