@@ -17,7 +17,7 @@ export class SalesService {
 
     // Check for duplicate syncId (offline sync)
     if (syncId) {
-      const existing = await this.prisma.sale.findUnique({
+      const existing = await this.prisma.sale.findFirst({
         where: { syncId },
       });
       if (existing) {
