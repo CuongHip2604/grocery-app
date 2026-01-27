@@ -5,7 +5,7 @@ import {
   IsBoolean,
   IsInt,
   Min,
-  IsUUID,
+  IsMongoId,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -39,7 +39,7 @@ export class InventoryQueryDto {
   @IsOptional()
   search?: string;
 
-  @IsUUID()
+  @IsMongoId()
   @IsOptional()
   categoryId?: string;
 

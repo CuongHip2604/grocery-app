@@ -3,7 +3,7 @@ import {
   IsNotEmpty,
   IsNumber,
   IsOptional,
-  IsUUID,
+  IsMongoId,
   IsArray,
   ValidateNested,
   IsEnum,
@@ -15,7 +15,7 @@ import { Type } from 'class-transformer';
 import { PaymentType } from '@prisma/client';
 
 export class CreateSaleItemDto {
-  @IsUUID()
+  @IsMongoId()
   @IsNotEmpty()
   productId: string;
 
@@ -26,7 +26,7 @@ export class CreateSaleItemDto {
 }
 
 export class CreateSaleDto {
-  @IsUUID()
+  @IsMongoId()
   @IsOptional()
   customerId?: string;
 
@@ -52,7 +52,7 @@ export class SalesQueryDto {
   @IsOptional()
   endDate?: string;
 
-  @IsUUID()
+  @IsMongoId()
   @IsOptional()
   customerId?: string;
 

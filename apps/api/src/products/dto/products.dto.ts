@@ -4,7 +4,7 @@ import {
   IsNumber,
   IsOptional,
   IsBoolean,
-  IsUUID,
+  IsMongoId,
   Min,
   IsInt,
 } from 'class-validator';
@@ -33,7 +33,7 @@ export class CreateProductDto {
   @Min(0)
   cost: number;
 
-  @IsUUID()
+  @IsMongoId()
   @IsOptional()
   categoryId?: string;
 
@@ -75,7 +75,7 @@ export class UpdateProductDto {
   @Min(0)
   cost?: number;
 
-  @IsUUID()
+  @IsMongoId()
   @IsOptional()
   categoryId?: string;
 
@@ -151,7 +151,7 @@ export class ProductQueryDto {
   @IsOptional()
   search?: string;
 
-  @IsUUID()
+  @IsMongoId()
   @IsOptional()
   categoryId?: string;
 
