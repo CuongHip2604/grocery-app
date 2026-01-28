@@ -1,7 +1,14 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { Prisma } from '@prisma/client';
 import * as admin from 'firebase-admin';
-import { LowStockProduct, NotificationPayload } from './dto/notifications.dto';
+import {
+  LowStockProduct,
+  NotificationPayload,
+  NotificationQueryDto,
+  CreateNotificationDto,
+  NotificationType,
+} from './dto/notifications.dto';
 
 @Injectable()
 export class NotificationsService implements OnModuleInit {
@@ -83,27 +90,13 @@ export class NotificationsService implements OnModuleInit {
   }
 
   async sendLowStockNotification(products: LowStockProduct[]) {
-    if (!this.firebaseApp) {
-      this.logger.warn('Firebase not initialized. Skipping notification.');
-      return;
-    }
-
     if (products.length === 0) {
       return;
     }
 
-    // Get all registered tokens
-    const subscriptions = await this.prisma.pushSubscription.findMany();
-
-    if (subscriptions.length === 0) {
-      this.logger.debug('No registered tokens. Skipping notification.');
-      return;
-    }
-
-    const tokens = subscriptions.map((s) => s.token);
-
     // Build notification payload
     let payload: NotificationPayload;
+    let notificationData: Record<string, unknown>;
 
     if (products.length === 1) {
       const product = products[0];
@@ -116,6 +109,11 @@ export class NotificationsService implements OnModuleInit {
           productId: product.id,
         },
       };
+      notificationData = {
+        productId: product.id,
+        productName: product.name,
+        quantity: product.quantity,
+      };
     } else {
       payload = {
         title: 'Cảnh báo tồn kho',
@@ -125,7 +123,39 @@ export class NotificationsService implements OnModuleInit {
           url: '/inventory?lowStock=true',
         },
       };
+      notificationData = {
+        productCount: products.length,
+        products: products.map((p) => ({
+          id: p.id,
+          name: p.name,
+          quantity: p.quantity,
+        })),
+      };
     }
+
+    // Store notification in database (broadcast to all users)
+    await this.storeNotification(
+      NotificationType.LOW_STOCK,
+      payload.title,
+      payload.body,
+      notificationData
+    );
+
+    // Send push notification if Firebase is available
+    if (!this.firebaseApp) {
+      this.logger.warn('Firebase not initialized. Push notification skipped.');
+      return;
+    }
+
+    // Get all registered tokens
+    const subscriptions = await this.prisma.pushSubscription.findMany();
+
+    if (subscriptions.length === 0) {
+      this.logger.debug('No registered tokens. Push notification skipped.');
+      return;
+    }
+
+    const tokens = subscriptions.map((s) => s.token);
 
     try {
       // Use data-only message for web push so service worker handles display
@@ -224,5 +254,153 @@ export class NotificationsService implements OnModuleInit {
       firebaseInitialized: !!this.firebaseApp,
       registeredTokens: subscriptions.length,
     };
+  }
+
+  // ============================================
+  // Notification List Methods
+  // ============================================
+
+  async createNotification(dto: CreateNotificationDto) {
+    const notification = await this.prisma.notification.create({
+      data: {
+        type: dto.type,
+        title: dto.title,
+        body: dto.body,
+        data: dto.data as Prisma.InputJsonValue | undefined,
+        userId: dto.userId,
+      },
+    });
+
+    return { data: notification };
+  }
+
+  async getNotifications(query: NotificationQueryDto, userId?: string) {
+    const { page = 1, limit = 20, type, isRead } = query;
+    const skip = (page - 1) * limit;
+
+    const where: Record<string, unknown> = {};
+
+    // Filter by userId if provided (for user-specific notifications)
+    // If no userId, get all notifications (for broadcast notifications)
+    if (userId) {
+      where.OR = [{ userId }, { userId: null }];
+    }
+
+    if (type) {
+      where.type = type;
+    }
+
+    if (typeof isRead === 'boolean') {
+      where.isRead = isRead;
+    }
+
+    const [notifications, total] = await Promise.all([
+      this.prisma.notification.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.notification.count({ where }),
+    ]);
+
+    return {
+      data: notifications,
+      meta: {
+        total,
+        page,
+        limit,
+      },
+    };
+  }
+
+  async markAsRead(notificationIds: string[], userId?: string) {
+    const where: Record<string, unknown> = {
+      id: { in: notificationIds },
+    };
+
+    // Only update notifications the user has access to
+    if (userId) {
+      where.OR = [{ userId }, { userId: null }];
+    }
+
+    await this.prisma.notification.updateMany({
+      where,
+      data: { isRead: true },
+    });
+
+    return { message: 'Notifications marked as read' };
+  }
+
+  async markAllAsRead(userId?: string) {
+    const where: Record<string, unknown> = {
+      isRead: false,
+    };
+
+    if (userId) {
+      where.OR = [{ userId }, { userId: null }];
+    }
+
+    await this.prisma.notification.updateMany({
+      where,
+      data: { isRead: true },
+    });
+
+    return { message: 'All notifications marked as read' };
+  }
+
+  async getUnreadCount(userId?: string) {
+    const where: Record<string, unknown> = {
+      isRead: false,
+    };
+
+    if (userId) {
+      where.OR = [{ userId }, { userId: null }];
+    }
+
+    const count = await this.prisma.notification.count({ where });
+
+    return { count };
+  }
+
+  async deleteNotification(id: string, userId?: string) {
+    const where: Record<string, unknown> = { id };
+
+    if (userId) {
+      where.OR = [{ userId }, { userId: null }];
+    }
+
+    const notification = await this.prisma.notification.findFirst({ where });
+
+    if (!notification) {
+      throw new NotFoundException('Notification not found');
+    }
+
+    await this.prisma.notification.delete({ where: { id } });
+
+    return { message: 'Notification deleted' };
+  }
+
+  // Helper method to store notification in database
+  private async storeNotification(
+    type: NotificationType,
+    title: string,
+    body: string,
+    notificationData?: Record<string, unknown>,
+    userId?: string
+  ) {
+    try {
+      await this.prisma.notification.create({
+        data: {
+          type,
+          title,
+          body,
+          data: notificationData as Prisma.InputJsonValue | undefined,
+          userId,
+        },
+      });
+    } catch (error) {
+      this.logger.error('Failed to store notification', error);
+    }
   }
 }

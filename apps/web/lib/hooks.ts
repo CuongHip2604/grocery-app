@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api, CreateProductInput, CreateSaleInput, CreateExpenseInput, BulkProductInput, BulkCategoryInput, CreateCategoryInput, CreateCustomerInput } from './api';
+import { api, CreateProductInput, CreateSaleInput, CreateExpenseInput, BulkProductInput, BulkCategoryInput, CreateCategoryInput, CreateCustomerInput, NotificationQueryParams } from './api';
 
 // Query keys
 export const queryKeys = {
@@ -18,6 +18,8 @@ export const queryKeys = {
   salesReport: (startDate: string, endDate: string) => ['reports', 'sales', startDate, endDate] as const,
   profitLoss: (startDate: string, endDate: string) => ['reports', 'profit-loss', startDate, endDate] as const,
   expenses: (params?: Record<string, string>) => ['expenses', params] as const,
+  notifications: (params?: NotificationQueryParams) => ['notifications', params] as const,
+  unreadNotificationCount: ['notifications', 'unread-count'] as const,
 };
 
 // Dashboard
@@ -355,5 +357,51 @@ export function useRegisterPushToken() {
 export function useUnregisterPushToken() {
   return useMutation({
     mutationFn: (token: string) => api.unregisterPushToken(token),
+  });
+}
+
+// Notifications
+export function useNotifications(params?: NotificationQueryParams) {
+  return useQuery({
+    queryKey: queryKeys.notifications(params),
+    queryFn: () => api.getNotifications(params),
+  });
+}
+
+export function useUnreadNotificationCount() {
+  return useQuery({
+    queryKey: queryKeys.unreadNotificationCount,
+    queryFn: () => api.getUnreadNotificationCount(),
+    refetchInterval: 30000, // Refetch every 30 seconds
+  });
+}
+
+export function useMarkNotificationsAsRead() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (notificationIds: string[]) => api.markNotificationsAsRead(notificationIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
+  });
+}
+
+export function useMarkAllNotificationsAsRead() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.markAllNotificationsAsRead(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
+  });
+}
+
+export function useDeleteNotification() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.deleteNotification(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
   });
 }

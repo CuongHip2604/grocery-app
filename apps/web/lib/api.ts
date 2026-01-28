@@ -424,6 +424,44 @@ class ApiClient {
     }>('/api/notifications/status');
     return data;
   }
+
+  // Notification List
+  async getNotifications(params?: NotificationQueryParams) {
+    const { data } = await this.client.get<{ data: Notification[]; meta: Meta }>(
+      '/api/notifications',
+      { params }
+    );
+    return data;
+  }
+
+  async getUnreadNotificationCount() {
+    const { data } = await this.client.get<{ count: number }>(
+      '/api/notifications/unread-count'
+    );
+    return data;
+  }
+
+  async markNotificationsAsRead(notificationIds: string[]) {
+    const { data } = await this.client.put<{ message: string }>(
+      '/api/notifications/read',
+      { notificationIds }
+    );
+    return data;
+  }
+
+  async markAllNotificationsAsRead() {
+    const { data } = await this.client.put<{ message: string }>(
+      '/api/notifications/read-all'
+    );
+    return data;
+  }
+
+  async deleteNotification(id: string) {
+    const { data } = await this.client.delete<{ message: string }>(
+      `/api/notifications/${id}`
+    );
+    return data;
+  }
 }
 
 export const api = new ApiClient(API_BASE);
@@ -475,6 +513,7 @@ export interface CreateProductInput {
 
 export interface BulkProductInput {
   name: string;
+  barcode: string;
   description?: string;
   price: number;
   cost: number;
@@ -703,4 +742,25 @@ export interface SupplierPayment {
   dueDate?: string;
   paidDate?: string;
   status: 'PENDING' | 'PAID' | 'OVERDUE';
+}
+
+// Notification types
+export type NotificationType = 'LOW_STOCK' | 'SALE' | 'PAYMENT' | 'SYSTEM';
+
+export interface Notification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  body: string;
+  data?: Record<string, unknown>;
+  isRead: boolean;
+  userId?: string;
+  createdAt: string;
+}
+
+export interface NotificationQueryParams {
+  page?: number;
+  limit?: number;
+  type?: NotificationType;
+  isRead?: boolean;
 }

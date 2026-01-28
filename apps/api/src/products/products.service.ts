@@ -209,10 +209,17 @@ export class ProductsService {
     for (let i = 0; i < products.length; i++) {
       const dto = products[i];
       try {
-        // Auto-generate barcode
-        const barcode = this.generateBarcode();
+        const barcode = dto.barcode.trim();
 
-        const { initialStock, ...productData } = dto;
+        // Check if barcode already exists
+        const existing = await this.prisma.product.findUnique({
+          where: { barcode },
+        });
+        if (existing) {
+          throw new Error(`Barcode "${barcode}" đã tồn tại`);
+        }
+
+        const { initialStock, barcode: _, ...productData } = dto;
 
         await this.prisma.product.create({
           data: {
@@ -267,11 +274,12 @@ export class ProductsService {
     // Check required columns
     const firstRow = rows[0];
     const hasName = findColumn(firstRow, 'name', 'tên') !== undefined;
+    const hasBarcode = findColumn(firstRow, 'barcode', 'mã vạch', 'mavach') !== undefined;
     const hasPrice = findColumn(firstRow, 'price', 'giá bán', 'giaban') !== undefined;
     const hasCost = findColumn(firstRow, 'cost', 'giá nhập', 'gianhap') !== undefined;
 
-    if (!hasName || !hasPrice || !hasCost) {
-      throw new BadRequestException('Thiếu cột bắt buộc: name, price, cost');
+    if (!hasName || !hasBarcode || !hasPrice || !hasCost) {
+      throw new BadRequestException('Thiếu cột bắt buộc: name, barcode, price, cost');
     }
 
     const results = {
@@ -286,6 +294,7 @@ export class ProductsService {
 
       try {
         const name = String(findColumn(row, 'name', 'tên') || '').trim();
+        const barcodeVal = findColumn(row, 'barcode', 'mã vạch', 'mavach');
         const priceVal = findColumn(row, 'price', 'giá bán', 'giaban');
         const costVal = findColumn(row, 'cost', 'giá nhập', 'gianhap');
         const description = String(findColumn(row, 'description', 'mô tả', 'mota') || '').trim();
@@ -295,6 +304,11 @@ export class ProductsService {
         // Validation
         if (!name) {
           throw new Error('Tên là bắt buộc');
+        }
+
+        const barcode = barcodeVal ? String(barcodeVal).trim() : '';
+        if (!barcode) {
+          throw new Error('Mã vạch là bắt buộc');
         }
 
         const price = typeof priceVal === 'number' ? priceVal : parseFloat(String(priceVal));
@@ -319,8 +333,13 @@ export class ProductsService {
           if (isNaN(initialStock) || initialStock < 0) initialStock = 0;
         }
 
-        // Create product
-        const barcode = this.generateBarcode();
+        // Check if barcode already exists
+        const existing = await this.prisma.product.findUnique({
+          where: { barcode },
+        });
+        if (existing) {
+          throw new Error(`Barcode "${barcode}" đã tồn tại`);
+        }
 
         await this.prisma.product.create({
           data: {

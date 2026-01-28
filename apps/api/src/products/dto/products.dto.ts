@@ -118,6 +118,10 @@ export class BulkCreateProductDto {
   name: string;
 
   @IsString()
+  @IsNotEmpty()
+  barcode: string;
+
+  @IsString()
   @IsOptional()
   description?: string;
 

@@ -54,10 +54,9 @@ export default function ImportProductsPage() {
           <div className="rounded-md bg-muted p-4 text-sm">
             <p className="font-medium mb-2">Yêu cầu định dạng Excel:</p>
             <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-              <li>Cột bắt buộc: <code className="bg-background px-1 rounded">name</code>, <code className="bg-background px-1 rounded">price</code>, <code className="bg-background px-1 rounded">cost</code></li>
+              <li>Cột bắt buộc: <code className="bg-background px-1 rounded">name</code>, <code className="bg-background px-1 rounded">barcode</code>, <code className="bg-background px-1 rounded">price</code>, <code className="bg-background px-1 rounded">cost</code></li>
               <li>Cột tùy chọn: <code className="bg-background px-1 rounded">description</code>, <code className="bg-background px-1 rounded">reorderLevel</code>, <code className="bg-background px-1 rounded">initialStock</code></li>
               <li>Dòng đầu tiên phải là tiêu đề</li>
-              <li>Mã vạch sẽ được tự động tạo cho mỗi sản phẩm</li>
             </ul>
             <div className="mt-3 overflow-x-auto">
               <p className="font-medium mb-1">Ví dụ:</p>
@@ -65,6 +64,7 @@ export default function ImportProductsPage() {
                 <thead className="bg-background">
                   <tr>
                     <th className="border px-2 py-1">name</th>
+                    <th className="border px-2 py-1">barcode</th>
                     <th className="border px-2 py-1">price</th>
                     <th className="border px-2 py-1">cost</th>
                     <th className="border px-2 py-1">initialStock</th>
@@ -73,12 +73,14 @@ export default function ImportProductsPage() {
                 <tbody>
                   <tr>
                     <td className="border px-2 py-1">Gạo 5kg</td>
+                    <td className="border px-2 py-1">8934567890123</td>
                     <td className="border px-2 py-1">125000</td>
                     <td className="border px-2 py-1">100000</td>
                     <td className="border px-2 py-1">50</td>
                   </tr>
                   <tr>
                     <td className="border px-2 py-1">Đường 1kg</td>
+                    <td className="border px-2 py-1">8934567890456</td>
                     <td className="border px-2 py-1">25000</td>
                     <td className="border px-2 py-1">20000</td>
                     <td className="border px-2 py-1">100</td>
