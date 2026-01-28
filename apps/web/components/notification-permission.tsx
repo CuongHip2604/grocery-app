@@ -16,6 +16,7 @@ export function NotificationPermission() {
   const [permission, setPermission] = useState<NotificationPermission | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [debugStatus, setDebugStatus] = useState<string>('');
   const registerToken = useRegisterPushToken();
 
   useEffect(() => {
@@ -59,12 +60,17 @@ export function NotificationPermission() {
 
   const registerTokenSilently = async () => {
     try {
+      setDebugStatus('Getting token...');
       const token = await getFCMToken();
       if (token) {
+        setDebugStatus('Registering: ' + token.substring(0, 10) + '...');
         await registerToken.mutateAsync(token);
+        setDebugStatus('✅ Token registered');
+      } else {
+        setDebugStatus('❌ No token');
       }
-    } catch {
-      // Silent fail
+    } catch (err) {
+      setDebugStatus('❌ ' + (err instanceof Error ? err.message : 'Error'));
     }
   };
 
@@ -92,6 +98,27 @@ export function NotificationPermission() {
   };
 
   if (!showModal || permission === 'granted' || permission === 'denied') {
+    // Show debug status if available
+    if (debugStatus) {
+      return (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '16px',
+            left: '16px',
+            zIndex: 99999,
+            backgroundColor: '#333',
+            color: '#fff',
+            padding: '8px 12px',
+            borderRadius: '6px',
+            fontSize: '12px',
+            fontFamily: 'monospace',
+          }}
+        >
+          {debugStatus}
+        </div>
+      );
+    }
     return null;
   }
 
