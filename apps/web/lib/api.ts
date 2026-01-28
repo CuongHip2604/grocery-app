@@ -406,6 +406,24 @@ class ApiClient {
     );
     return data;
   }
+
+  async sendTestNotification() {
+    const { data } = await this.client.post<{ success?: number; failed?: number; error?: string; errors?: string[] }>(
+      '/api/notifications/test'
+    );
+    return data;
+  }
+
+  async getNotificationStatus() {
+    const { data } = await this.client.get<{
+      firebaseInitialized: boolean;
+      registeredTokens: number;
+      hasProjectId: boolean;
+      hasClientEmail: boolean;
+      hasPrivateKey: boolean;
+    }>('/api/notifications/status');
+    return data;
+  }
 }
 
 export const api = new ApiClient(API_BASE);

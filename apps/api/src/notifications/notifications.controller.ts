@@ -5,6 +5,7 @@ import {
   Body,
   UseGuards,
   Request,
+  Get,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { NotificationsService } from './notifications.service';
@@ -27,5 +28,22 @@ export class NotificationsController {
   @UseGuards(JwtAuthGuard)
   async unregisterToken(@Body() dto: UnregisterTokenDto) {
     return this.notificationsService.unregisterToken(dto.token);
+  }
+
+  @Post('test')
+  @UseGuards(JwtAuthGuard)
+  async sendTestNotification() {
+    return this.notificationsService.sendNotification({
+      title: 'Test thông báo',
+      body: 'Đây là thông báo test từ hệ thống',
+      icon: '/icon-192.png',
+      data: { url: '/inventory' },
+    });
+  }
+
+  @Get('status')
+  @UseGuards(JwtAuthGuard)
+  async getStatus() {
+    return this.notificationsService.getStatus();
   }
 }

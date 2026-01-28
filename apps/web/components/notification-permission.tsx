@@ -11,6 +11,7 @@ import {
   initializeFirebaseApp,
 } from '../lib/firebase';
 import { useRegisterPushToken } from '../lib/hooks';
+import { api } from '../lib/api';
 
 interface DebugInfo {
   supported: boolean;
@@ -18,6 +19,14 @@ interface DebugInfo {
   token: string | null;
   tokenError: string | null;
   registerStatus: string | null;
+  backendStatus: {
+    firebaseInitialized?: boolean;
+    registeredTokens?: number;
+    hasProjectId?: boolean;
+    hasClientEmail?: boolean;
+    hasPrivateKey?: boolean;
+  } | null;
+  testResult: string | null;
 }
 
 export function NotificationPermission() {
@@ -31,6 +40,8 @@ export function NotificationPermission() {
     token: null,
     tokenError: null,
     registerStatus: null,
+    backendStatus: null,
+    testResult: null,
   });
   const registerToken = useRegisterPushToken();
 
@@ -118,6 +129,39 @@ export function NotificationPermission() {
     setShowModal(false);
   };
 
+  const checkBackendStatus = async () => {
+    try {
+      const status = await api.getNotificationStatus();
+      setDebugInfo(prev => ({ ...prev, backendStatus: status }));
+    } catch (err) {
+      setDebugInfo(prev => ({
+        ...prev,
+        backendStatus: { firebaseInitialized: false },
+        testResult: `Status error: ${err instanceof Error ? err.message : 'Unknown'}`
+      }));
+    }
+  };
+
+  const sendTestNotification = async () => {
+    setDebugInfo(prev => ({ ...prev, testResult: 'Sending...' }));
+    try {
+      const result = await api.sendTestNotification();
+      if (result.error) {
+        setDebugInfo(prev => ({ ...prev, testResult: `Error: ${result.error}` }));
+      } else {
+        setDebugInfo(prev => ({
+          ...prev,
+          testResult: `Success: ${result.success}, Failed: ${result.failed}${result.errors?.length ? ` - ${result.errors.join(', ')}` : ''}`
+        }));
+      }
+    } catch (err) {
+      setDebugInfo(prev => ({
+        ...prev,
+        testResult: `Error: ${err instanceof Error ? err.message : 'Unknown'}`
+      }));
+    }
+  };
+
   const debugPanel = showDebug && (
     <div
       style={{
@@ -131,21 +175,57 @@ export function NotificationPermission() {
         padding: '12px',
         fontSize: '11px',
         fontFamily: 'monospace',
-        maxWidth: '300px',
+        maxWidth: '320px',
+        maxHeight: '80vh',
+        overflow: 'auto',
       }}
     >
-      <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>Debug Info</div>
+      <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>Frontend</div>
       <div>Supported: {debugInfo.supported ? '✅' : '❌'}</div>
       <div>Permission: {debugInfo.permission}</div>
       <div>Token: {debugInfo.token || 'none'}</div>
       {debugInfo.tokenError && <div style={{ color: '#ff6b6b' }}>Error: {debugInfo.tokenError}</div>}
       <div>Register: {debugInfo.registerStatus || 'pending'}</div>
-      <button
-        onClick={() => setShowDebug(false)}
-        style={{ marginTop: '8px', fontSize: '10px', cursor: 'pointer' }}
-      >
-        Close
-      </button>
+
+      <div style={{ fontWeight: 'bold', marginTop: '12px', marginBottom: '8px' }}>Backend</div>
+      {debugInfo.backendStatus ? (
+        <>
+          <div>Firebase: {debugInfo.backendStatus.firebaseInitialized ? '✅' : '❌'}</div>
+          <div>Tokens: {debugInfo.backendStatus.registeredTokens}</div>
+          <div>ProjectId: {debugInfo.backendStatus.hasProjectId ? '✅' : '❌'}</div>
+          <div>ClientEmail: {debugInfo.backendStatus.hasClientEmail ? '✅' : '❌'}</div>
+          <div>PrivateKey: {debugInfo.backendStatus.hasPrivateKey ? '✅' : '❌'}</div>
+        </>
+      ) : (
+        <div style={{ color: '#888' }}>Click Check Status</div>
+      )}
+
+      {debugInfo.testResult && (
+        <div style={{ marginTop: '8px', color: debugInfo.testResult.includes('Error') ? '#ff6b6b' : '#4ade80' }}>
+          {debugInfo.testResult}
+        </div>
+      )}
+
+      <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
+        <button
+          onClick={checkBackendStatus}
+          style={{ fontSize: '10px', cursor: 'pointer', padding: '4px 8px' }}
+        >
+          Check Status
+        </button>
+        <button
+          onClick={sendTestNotification}
+          style={{ fontSize: '10px', cursor: 'pointer', padding: '4px 8px' }}
+        >
+          Send Test
+        </button>
+        <button
+          onClick={() => setShowDebug(false)}
+          style={{ fontSize: '10px', cursor: 'pointer', padding: '4px 8px' }}
+        >
+          Close
+        </button>
+      </div>
     </div>
   );
 

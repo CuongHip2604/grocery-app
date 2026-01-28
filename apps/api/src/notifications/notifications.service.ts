@@ -172,13 +172,13 @@ export class NotificationsService implements OnModuleInit {
   async sendNotification(payload: NotificationPayload) {
     if (!this.firebaseApp) {
       this.logger.warn('Firebase not initialized. Skipping notification.');
-      return;
+      return { error: 'Firebase not initialized' };
     }
 
     const subscriptions = await this.prisma.pushSubscription.findMany();
 
     if (subscriptions.length === 0) {
-      return;
+      return { error: 'No registered tokens' };
     }
 
     const tokens = subscriptions.map((s) => s.token);
@@ -200,7 +200,29 @@ export class NotificationsService implements OnModuleInit {
       data: payload.data,
     };
 
-    const response = await admin.messaging().sendEachForMulticast(message);
-    return { success: response.successCount, failed: response.failureCount };
+    try {
+      const response = await admin.messaging().sendEachForMulticast(message);
+      return {
+        success: response.successCount,
+        failed: response.failureCount,
+        errors: response.responses
+          .filter((r) => !r.success)
+          .map((r) => r.error?.message),
+      };
+    } catch (error) {
+      this.logger.error('Failed to send notification', error);
+      return { error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
+  async getStatus() {
+    const subscriptions = await this.prisma.pushSubscription.findMany();
+    return {
+      firebaseInitialized: !!this.firebaseApp,
+      registeredTokens: subscriptions.length,
+      hasProjectId: !!process.env.FIREBASE_PROJECT_ID,
+      hasClientEmail: !!process.env.FIREBASE_CLIENT_EMAIL,
+      hasPrivateKey: !!process.env.FIREBASE_PRIVATE_KEY,
+    };
   }
 }
