@@ -47,6 +47,10 @@ export class InventoryQueryDto {
   @IsOptional()
   lowStockOnly?: boolean;
 
+  @Type(() => Boolean)
+  @IsOptional()
+  lowStock?: boolean; // Alias for lowStockOnly
+
   @IsString()
   @IsOptional()
   sortBy?: 'name' | 'quantity' | 'value' = 'name';

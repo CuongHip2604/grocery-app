@@ -23,11 +23,13 @@ export class InventoryService {
       search,
       categoryId,
       lowStockOnly,
+      lowStock, // Alias for lowStockOnly
       sortBy = 'name',
       sortOrder = 'asc',
       page = 1,
       limit = 50,
     } = query;
+    const filterLowStock = lowStockOnly || lowStock; // Support both parameter names
     const skip = (page - 1) * limit;
 
     const where: Record<string, unknown> = {};
@@ -86,7 +88,7 @@ export class InventoryService {
     });
 
     // Filter low stock if requested
-    if (lowStockOnly) {
+    if (filterLowStock) {
       inventoryItems = inventoryItems.filter((item) => item.isLowStock);
     }
 
