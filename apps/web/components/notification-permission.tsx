@@ -8,6 +8,7 @@ import {
   requestNotificationPermission,
   getFCMToken,
   initializeFirebaseApp,
+  onForegroundMessage,
 } from '../lib/firebase';
 import { useRegisterPushToken } from '../lib/hooks';
 
@@ -31,6 +32,29 @@ export function NotificationPermission() {
       return () => clearTimeout(timer);
     }
   }, []);
+
+  // Handle foreground messages (needed for Android Chrome)
+  // Only show notification when app is in foreground and NOT running as standalone PWA
+  useEffect(() => {
+    if (permission !== 'granted') return;
+
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+
+    // Skip foreground handler for standalone PWA (iOS) - service worker handles it
+    if (isStandalone) return;
+
+    const unsubscribe = onForegroundMessage((payload: unknown) => {
+      const data = payload as { notification?: { title?: string; body?: string } };
+      if (data.notification) {
+        new Notification(data.notification.title || 'Thông báo', {
+          body: data.notification.body,
+          icon: '/icon-192.png',
+        });
+      }
+    });
+
+    return () => { if (unsubscribe) unsubscribe(); };
+  }, [permission]);
 
 
   const registerTokenSilently = async () => {
