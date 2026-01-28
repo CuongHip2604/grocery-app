@@ -207,9 +207,19 @@ export class NotificationsService implements OnModuleInit {
     }
   }
 
-  async sendNotification(payload: NotificationPayload) {
+  async sendNotification(payload: NotificationPayload, storeInDb = true) {
+    // Store notification in database
+    if (storeInDb) {
+      await this.storeNotification(
+        NotificationType.SYSTEM,
+        payload.title,
+        payload.body,
+        payload.data as Record<string, unknown>
+      );
+    }
+
     if (!this.firebaseApp) {
-      this.logger.warn('Firebase not initialized. Skipping notification.');
+      this.logger.warn('Firebase not initialized. Skipping push notification.');
       return { error: 'Firebase not initialized' };
     }
 
@@ -282,8 +292,9 @@ export class NotificationsService implements OnModuleInit {
 
     // Filter by userId if provided (for user-specific notifications)
     // If no userId, get all notifications (for broadcast notifications)
+    // Note: MongoDB requires { isSet: false } instead of null to match missing fields
     if (userId) {
-      where.OR = [{ userId }, { userId: null }];
+      where.OR = [{ userId }, { userId: { isSet: false } }];
     }
 
     if (type) {
@@ -321,7 +332,7 @@ export class NotificationsService implements OnModuleInit {
 
     // Only update notifications the user has access to
     if (userId) {
-      where.OR = [{ userId }, { userId: null }];
+      where.OR = [{ userId }, { userId: { isSet: false } }];
     }
 
     await this.prisma.notification.updateMany({
@@ -338,7 +349,7 @@ export class NotificationsService implements OnModuleInit {
     };
 
     if (userId) {
-      where.OR = [{ userId }, { userId: null }];
+      where.OR = [{ userId }, { userId: { isSet: false } }];
     }
 
     await this.prisma.notification.updateMany({
@@ -355,7 +366,7 @@ export class NotificationsService implements OnModuleInit {
     };
 
     if (userId) {
-      where.OR = [{ userId }, { userId: null }];
+      where.OR = [{ userId }, { userId: { isSet: false } }];
     }
 
     const count = await this.prisma.notification.count({ where });
@@ -367,7 +378,7 @@ export class NotificationsService implements OnModuleInit {
     const where: Record<string, unknown> = { id };
 
     if (userId) {
-      where.OR = [{ userId }, { userId: null }];
+      where.OR = [{ userId }, { userId: { isSet: false } }];
     }
 
     const notification = await this.prisma.notification.findFirst({ where });
@@ -389,8 +400,9 @@ export class NotificationsService implements OnModuleInit {
     notificationData?: Record<string, unknown>,
     userId?: string
   ) {
+    this.logger.log(`Storing notification: type=${type}, title=${title}, body=${body}`);
     try {
-      await this.prisma.notification.create({
+      const notification = await this.prisma.notification.create({
         data: {
           type,
           title,
@@ -399,8 +411,11 @@ export class NotificationsService implements OnModuleInit {
           userId,
         },
       });
+      this.logger.log(`Notification stored successfully: id=${notification.id}`);
+      return notification;
     } catch (error) {
       this.logger.error('Failed to store notification', error);
+      throw error; // Re-throw to see the actual error
     }
   }
 }
