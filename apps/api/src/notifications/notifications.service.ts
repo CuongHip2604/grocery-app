@@ -40,8 +40,6 @@ export class NotificationsService implements OnModuleInit {
       privateKey = privateKey.slice(1, -1);
     }
 
-    this.logger.log(`Firebase config: projectId=${projectId}, clientEmail=${clientEmail}, privateKey length=${privateKey.length}`);
-
     try {
       this.firebaseApp = admin.initializeApp({
         credential: admin.credential.cert({
@@ -233,17 +231,9 @@ export class NotificationsService implements OnModuleInit {
 
   async getStatus() {
     const subscriptions = await this.prisma.pushSubscription.findMany();
-    const privateKey = process.env.FIREBASE_PRIVATE_KEY || '';
     return {
       firebaseInitialized: !!this.firebaseApp,
       registeredTokens: subscriptions.length,
-      hasProjectId: !!process.env.FIREBASE_PROJECT_ID,
-      hasClientEmail: !!process.env.FIREBASE_CLIENT_EMAIL,
-      hasPrivateKey: !!process.env.FIREBASE_PRIVATE_KEY,
-      privateKeyLength: privateKey.length,
-      privateKeyStart: privateKey.substring(0, 30),
-      hasBeginMarker: privateKey.includes('-----BEGIN'),
-      hasLiteralNewline: privateKey.includes('\\n'),
     };
   }
 }
