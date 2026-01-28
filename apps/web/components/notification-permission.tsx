@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Bell, X } from 'lucide-react';
+import { Bell, X, Bug } from 'lucide-react';
 import {
   isNotificationSupported,
   getNotificationPermission,
@@ -12,18 +12,38 @@ import {
 } from '../lib/firebase';
 import { useRegisterPushToken } from '../lib/hooks';
 
+interface DebugInfo {
+  supported: boolean;
+  permission: string;
+  token: string | null;
+  tokenError: string | null;
+  registerStatus: string | null;
+}
+
 export function NotificationPermission() {
   const [permission, setPermission] = useState<NotificationPermission | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showDebug, setShowDebug] = useState(false);
+  const [debugInfo, setDebugInfo] = useState<DebugInfo>({
+    supported: false,
+    permission: 'unknown',
+    token: null,
+    tokenError: null,
+    registerStatus: null,
+  });
   const registerToken = useRegisterPushToken();
 
   useEffect(() => {
-    if (!isNotificationSupported()) return;
+    const supported = isNotificationSupported();
+    setDebugInfo(prev => ({ ...prev, supported }));
+
+    if (!supported) return;
 
     initializeFirebaseApp();
     const currentPermission = getNotificationPermission();
     setPermission(currentPermission);
+    setDebugInfo(prev => ({ ...prev, permission: currentPermission || 'null' }));
 
     if (currentPermission === 'granted') {
       registerTokenSilently();
@@ -51,11 +71,19 @@ export function NotificationPermission() {
   const registerTokenSilently = async () => {
     try {
       const token = await getFCMToken();
+      setDebugInfo(prev => ({ ...prev, token: token ? token.substring(0, 20) + '...' : null }));
       if (token) {
         await registerToken.mutateAsync(token);
+        setDebugInfo(prev => ({ ...prev, registerStatus: 'success' }));
+      } else {
+        setDebugInfo(prev => ({ ...prev, tokenError: 'No token returned' }));
       }
     } catch (err) {
-      // Silent fail
+      setDebugInfo(prev => ({
+        ...prev,
+        tokenError: err instanceof Error ? err.message : 'Unknown error',
+        registerStatus: 'failed'
+      }));
     }
   };
 
@@ -64,15 +92,23 @@ export function NotificationPermission() {
     try {
       const result = await requestNotificationPermission();
       setPermission(result);
+      setDebugInfo(prev => ({ ...prev, permission: result }));
       if (result === 'granted') {
         const token = await getFCMToken();
+        setDebugInfo(prev => ({ ...prev, token: token ? token.substring(0, 20) + '...' : null }));
         if (token) {
           await registerToken.mutateAsync(token);
+          setDebugInfo(prev => ({ ...prev, registerStatus: 'success' }));
+        } else {
+          setDebugInfo(prev => ({ ...prev, tokenError: 'No token returned' }));
         }
       }
       setShowModal(false);
     } catch (err) {
-      // Silent fail
+      setDebugInfo(prev => ({
+        ...prev,
+        tokenError: err instanceof Error ? err.message : 'Unknown error'
+      }));
     } finally {
       setIsLoading(false);
     }
@@ -82,11 +118,74 @@ export function NotificationPermission() {
     setShowModal(false);
   };
 
+  const debugPanel = showDebug && (
+    <div
+      style={{
+        position: 'fixed',
+        bottom: '16px',
+        left: '16px',
+        zIndex: 99999,
+        backgroundColor: '#1a1a1a',
+        color: '#fff',
+        borderRadius: '8px',
+        padding: '12px',
+        fontSize: '11px',
+        fontFamily: 'monospace',
+        maxWidth: '300px',
+      }}
+    >
+      <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>Debug Info</div>
+      <div>Supported: {debugInfo.supported ? '✅' : '❌'}</div>
+      <div>Permission: {debugInfo.permission}</div>
+      <div>Token: {debugInfo.token || 'none'}</div>
+      {debugInfo.tokenError && <div style={{ color: '#ff6b6b' }}>Error: {debugInfo.tokenError}</div>}
+      <div>Register: {debugInfo.registerStatus || 'pending'}</div>
+      <button
+        onClick={() => setShowDebug(false)}
+        style={{ marginTop: '8px', fontSize: '10px', cursor: 'pointer' }}
+      >
+        Close
+      </button>
+    </div>
+  );
+
+  const debugButton = (
+    <button
+      onClick={() => setShowDebug(true)}
+      style={{
+        position: 'fixed',
+        bottom: '16px',
+        left: '16px',
+        zIndex: 99998,
+        backgroundColor: '#333',
+        color: '#fff',
+        border: 'none',
+        borderRadius: '50%',
+        width: '40px',
+        height: '40px',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <Bug style={{ width: '20px', height: '20px' }} />
+    </button>
+  );
+
   if (!showModal || permission === 'granted' || permission === 'denied') {
-    return null;
+    return (
+      <>
+        {debugButton}
+        {debugPanel}
+      </>
+    );
   }
 
   return (
+    <>
+      {debugButton}
+      {debugPanel}
     <div
       style={{
         position: 'fixed',
@@ -175,5 +274,6 @@ export function NotificationPermission() {
         </button>
       </div>
     </div>
+    </>
   );
 }
