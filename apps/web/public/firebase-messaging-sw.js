@@ -9,11 +9,11 @@ importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-comp
 // The service worker cannot access environment variables directly,
 // so we initialize with empty values and let FCM handle it
 firebase.initializeApp({
-  apiKey: 'placeholder',
-  authDomain: 'placeholder',
-  projectId: 'placeholder',
-  messagingSenderId: 'placeholder',
-  appId: 'placeholder',
+  apiKey: 'AIzaSyBPEE-0Eo-MvoKTkFHO19_gP32x3MWAuek',
+  authDomain: 'grocery-6ad1e.firebaseapp.com',
+  projectId: 'grocery-6ad1e',
+  messagingSenderId: '891684654359',
+  appId: '1:891684654359:web:a201b6983da4ec49b6bb52',
 });
 
 const messaging = firebase.messaging();
