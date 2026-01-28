@@ -17,7 +17,7 @@ export class NotificationsService implements OnModuleInit {
   private initializeFirebase() {
     const projectId = process.env.FIREBASE_PROJECT_ID;
     const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-    const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+    let privateKey = process.env.FIREBASE_PRIVATE_KEY;
 
     if (!projectId || !clientEmail || !privateKey) {
       this.logger.warn(
@@ -25,6 +25,22 @@ export class NotificationsService implements OnModuleInit {
       );
       return;
     }
+
+    // Handle different private key formats:
+    // 1. JSON escaped: contains literal \n (two characters)
+    // 2. Already has actual newlines
+    // 3. Base64 encoded (some hosting platforms)
+    if (privateKey.includes('\\n')) {
+      // Replace literal \n with actual newlines
+      privateKey = privateKey.replace(/\\n/g, '\n');
+    }
+
+    // Remove surrounding quotes if present
+    if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
+      privateKey = privateKey.slice(1, -1);
+    }
+
+    this.logger.log(`Firebase config: projectId=${projectId}, clientEmail=${clientEmail}, privateKey length=${privateKey.length}`);
 
     try {
       this.firebaseApp = admin.initializeApp({
@@ -217,12 +233,17 @@ export class NotificationsService implements OnModuleInit {
 
   async getStatus() {
     const subscriptions = await this.prisma.pushSubscription.findMany();
+    const privateKey = process.env.FIREBASE_PRIVATE_KEY || '';
     return {
       firebaseInitialized: !!this.firebaseApp,
       registeredTokens: subscriptions.length,
       hasProjectId: !!process.env.FIREBASE_PROJECT_ID,
       hasClientEmail: !!process.env.FIREBASE_CLIENT_EMAIL,
       hasPrivateKey: !!process.env.FIREBASE_PRIVATE_KEY,
+      privateKeyLength: privateKey.length,
+      privateKeyStart: privateKey.substring(0, 30),
+      hasBeginMarker: privateKey.includes('-----BEGIN'),
+      hasLiteralNewline: privateKey.includes('\\n'),
     };
   }
 }
