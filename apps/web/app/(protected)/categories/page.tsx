@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Pencil, Trash2 } from 'lucide-react';
 import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory, useBulkImportCategories } from '../../../lib/hooks';
 import { categorySchema, CategoryFormData } from '../../../lib/schemas';
 import { Button, Input, Label, Card, CardContent, Spinner } from '../../../components/ui';
@@ -370,20 +371,24 @@ Gia vị`}
                       <p className="text-sm text-muted-foreground">{category.description}</p>
                     )}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">
+                  <div className="flex items-center gap-1">
+                    <span className="text-sm text-muted-foreground mr-2">
                       {category.productCount || 0} sản phẩm
                     </span>
-                    <Button variant="outline" size="sm" onClick={() => openEdit(category)}>
-                      Sửa
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setDeleteConfirm(category)}
+                    <button
+                      onClick={() => openEdit(category)}
+                      className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                      title="Sửa"
                     >
-                      Xóa
-                    </Button>
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => setDeleteConfirm(category)}
+                      className="p-2 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                      title="Xóa"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
                   </div>
                 </CardContent>
               </Card>

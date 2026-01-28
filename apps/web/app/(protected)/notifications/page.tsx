@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { ChevronLeft, AlertTriangle, ShoppingBag, Wallet, Info, Bell, X } from 'lucide-react';
 import {
   useNotifications,
   useMarkNotificationsAsRead,
@@ -18,41 +19,25 @@ const typeConfig: Record<NotificationType, { label: string; color: string; bgCol
     label: 'Tồn kho',
     color: 'text-amber-600',
     bgColor: 'bg-amber-50',
-    icon: (
-      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-      </svg>
-    ),
+    icon: <AlertTriangle className="h-5 w-5" />,
   },
   SALE: {
     label: 'Bán hàng',
     color: 'text-green-600',
     bgColor: 'bg-green-50',
-    icon: (
-      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-      </svg>
-    ),
+    icon: <ShoppingBag className="h-5 w-5" />,
   },
   PAYMENT: {
     label: 'Thanh toán',
     color: 'text-blue-600',
     bgColor: 'bg-blue-50',
-    icon: (
-      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-      </svg>
-    ),
+    icon: <Wallet className="h-5 w-5" />,
   },
   SYSTEM: {
     label: 'Hệ thống',
     color: 'text-gray-600',
     bgColor: 'bg-gray-50',
-    icon: (
-      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    ),
+    icon: <Info className="h-5 w-5" />,
   },
 };
 
@@ -112,9 +97,7 @@ export default function NotificationsPage() {
             onClick={() => router.back()}
             className="w-10 h-10 -ml-2 flex items-center justify-center rounded-full active:bg-muted"
           >
-            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
+            <ChevronLeft className="h-6 w-6" />
           </button>
           <h1 className="flex-1 text-lg font-semibold">Thông báo</h1>
           {unreadCount > 0 && (
@@ -174,9 +157,7 @@ export default function NotificationsPage() {
         ) : notifications.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 px-8">
             <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-3">
-              <svg className="h-8 w-8 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-              </svg>
+              <Bell className="h-8 w-8 text-muted-foreground" strokeWidth={1.5} />
             </div>
             <p className="text-muted-foreground text-center">
               {filter === 'unread' ? 'Không có thông báo chưa đọc' : 'Chưa có thông báo nào'}
@@ -235,9 +216,7 @@ export default function NotificationsPage() {
                     {deletingId === notification.id ? (
                       <Spinner size="sm" />
                     ) : (
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
+                      <X className="h-4 w-4" />
                     )}
                   </button>
                 </div>
