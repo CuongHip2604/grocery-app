@@ -18,18 +18,20 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// Handle background messages
+// Handle background messages (data-only messages from FCM)
 messaging.onBackgroundMessage((payload) => {
   console.log('[firebase-messaging-sw.js] Received background message:', payload);
 
-  const notificationTitle = payload.notification?.title || 'Cảnh báo tồn kho';
+  // Data is in payload.data for data-only messages
+  const data = payload.data || {};
+  const notificationTitle = data.title || 'Cảnh báo tồn kho';
   const notificationOptions = {
-    body: payload.notification?.body || 'Có sản phẩm sắp hết hàng',
-    icon: payload.notification?.icon || '/icon-192.png',
+    body: data.body || 'Có sản phẩm sắp hết hàng',
+    icon: data.icon || '/icon-192.png',
     badge: '/icon-192.png',
     tag: 'low-stock-notification',
     requireInteraction: true,
-    data: payload.data || {},
+    data: data,
   };
 
   self.registration.showNotification(notificationTitle, notificationOptions);
@@ -59,6 +61,15 @@ self.addEventListener('notificationclick', (event) => {
       }
     })
   );
+});
+
+// Handle raw push events (fallback for debugging)
+self.addEventListener('push', (event) => {
+  console.log('[firebase-messaging-sw.js] Push event received:', event);
+
+  if (event.data) {
+    console.log('[firebase-messaging-sw.js] Push data:', event.data.json());
+  }
 });
 
 // Install event

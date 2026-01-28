@@ -45,11 +45,12 @@ export function NotificationPermission() {
     if (isStandalone) return;
 
     const unsubscribe = onForegroundMessage((payload: unknown) => {
-      const data = payload as { notification?: { title?: string; body?: string } };
-      if (data.notification) {
-        new Notification(data.notification.title || 'Thông báo', {
-          body: data.notification.body,
-          icon: '/icon-192.png',
+      // Handle data-only messages
+      const msg = payload as { data?: { title?: string; body?: string; icon?: string } };
+      if (msg.data?.title) {
+        new Notification(msg.data.title, {
+          body: msg.data.body,
+          icon: msg.data.icon || '/icon-192.png',
         });
       }
     });

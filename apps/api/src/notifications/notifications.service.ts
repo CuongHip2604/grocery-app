@@ -128,23 +128,17 @@ export class NotificationsService implements OnModuleInit {
     }
 
     try {
+      // Use data-only message for web push so service worker handles display
+      // This ensures consistent behavior across iOS and Android
       const message: admin.messaging.MulticastMessage = {
         tokens,
-        notification: {
+        data: {
           title: payload.title,
           body: payload.body,
+          icon: payload.icon || '/icon-192.png',
+          url: payload.data?.url || '/inventory',
+          ...payload.data,
         },
-        webpush: {
-          notification: {
-            icon: payload.icon,
-            badge: '/icon-192.png',
-            requireInteraction: true,
-          },
-          fcmOptions: {
-            link: payload.data?.url || '/inventory',
-          },
-        },
-        data: payload.data,
       };
 
       const response = await admin.messaging().sendEachForMulticast(message);
@@ -197,21 +191,16 @@ export class NotificationsService implements OnModuleInit {
 
     const tokens = subscriptions.map((s) => s.token);
 
+    // Use data-only message for web push so service worker handles display
     const message: admin.messaging.MulticastMessage = {
       tokens,
-      notification: {
+      data: {
         title: payload.title,
         body: payload.body,
+        icon: payload.icon || '/icon-192.png',
+        url: payload.data?.url || '/',
+        ...payload.data,
       },
-      webpush: {
-        notification: {
-          icon: payload.icon || '/icon-192.png',
-        },
-        fcmOptions: {
-          link: payload.data?.url || '/',
-        },
-      },
-      data: payload.data,
     };
 
     try {
