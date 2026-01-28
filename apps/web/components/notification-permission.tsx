@@ -7,7 +7,6 @@ import {
   getNotificationPermission,
   requestNotificationPermission,
   getFCMToken,
-  onForegroundMessage,
   initializeFirebaseApp,
 } from '../lib/firebase';
 import { useRegisterPushToken } from '../lib/hooks';
@@ -33,20 +32,6 @@ export function NotificationPermission() {
     }
   }, []);
 
-  useEffect(() => {
-    if (permission === 'granted') {
-      const unsubscribe = onForegroundMessage((payload: unknown) => {
-        const data = payload as { notification?: { title?: string; body?: string } };
-        if (data.notification) {
-          new Notification(data.notification.title || 'Thông báo', {
-            body: data.notification.body,
-            icon: '/icon-192.png',
-          });
-        }
-      });
-      return () => { if (unsubscribe) unsubscribe(); };
-    }
-  }, [permission]);
 
   const registerTokenSilently = async () => {
     try {
