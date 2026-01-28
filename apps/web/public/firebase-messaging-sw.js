@@ -63,15 +63,6 @@ self.addEventListener('notificationclick', (event) => {
   );
 });
 
-// Handle raw push events (fallback for debugging)
-self.addEventListener('push', (event) => {
-  console.log('[firebase-messaging-sw.js] Push event received:', event);
-
-  if (event.data) {
-    console.log('[firebase-messaging-sw.js] Push data:', event.data.json());
-  }
-});
-
 // Install event
 self.addEventListener('install', (event) => {
   console.log('[firebase-messaging-sw.js] Service worker installed');
