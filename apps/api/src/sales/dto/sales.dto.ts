@@ -20,8 +20,8 @@ export class CreateSaleItemDto {
   productId: string;
 
   @Type(() => Number)
-  @IsInt()
-  @Min(1)
+  @IsNumber({ maxDecimalPlaces: 3 })
+  @Min(0.001)
   quantity: number;
 }
 

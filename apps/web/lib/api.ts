@@ -467,6 +467,8 @@ class ApiClient {
 export const api = new ApiClient(API_BASE);
 
 // Types
+export type PricingUnit = 'PIECE' | 'KG' | 'G' | 'PER_100G';
+
 export interface Meta {
   total: number;
   page: number;
@@ -484,6 +486,8 @@ export interface Product {
   category?: Category;
   reorderLevel: number;
   isCustomLabel: boolean;
+  isWeightBased: boolean;
+  pricingUnit: PricingUnit;
   inventory?: { quantity: number };
   createdAt: string;
 }
@@ -509,6 +513,8 @@ export interface CreateProductInput {
   categoryId?: string;
   reorderLevel?: number;
   initialStock?: number;
+  isWeightBased?: boolean;
+  pricingUnit?: PricingUnit;
 }
 
 export interface BulkProductInput {
@@ -546,7 +552,13 @@ export interface Sale {
 export interface SaleItem {
   id: string;
   productId: string;
-  product?: { id: string; name: string; barcode: string };
+  product?: {
+    id: string;
+    name: string;
+    barcode: string;
+    isWeightBased?: boolean;
+    pricingUnit?: PricingUnit;
+  };
   quantity: number;
   unitPrice: number;
   subtotal: number;

@@ -67,20 +67,22 @@ model Category {
 }
 
 model Product {
-  id            String     @id @default(auto()) @map("_id") @db.ObjectId
-  barcode       String     @unique
+  id            String       @id @default(auto()) @map("_id") @db.ObjectId
+  barcode       String       @unique
   name          String
   description   String?
   price         Float
   cost          Float
-  categoryId    String?    @map("category_id") @db.ObjectId
-  category      Category?  @relation(fields: [categoryId], references: [id])
-  reorderLevel  Int        @default(5) @map("reorder_level")
-  isCustomLabel Boolean    @default(false) @map("is_custom_label")
+  categoryId    String?      @map("category_id") @db.ObjectId
+  category      Category?    @relation(fields: [categoryId], references: [id])
+  reorderLevel  Int          @default(5) @map("reorder_level")
+  isCustomLabel Boolean      @default(false) @map("is_custom_label")
+  isWeightBased Boolean      @default(false) @map("is_weight_based")
+  pricingUnit   PricingUnit  @default(PIECE) @map("pricing_unit")
   inventory     Inventory?
   saleItems     SaleItem[]
-  createdAt     DateTime   @default(now()) @map("created_at")
-  updatedAt     DateTime   @updatedAt @map("updated_at")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
 
   @@map("products")
 }
@@ -89,7 +91,7 @@ model Inventory {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   productId   String   @unique @map("product_id") @db.ObjectId
   product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  quantity    Int      @default(0)
+  quantity    Float    @default(0)
   lastUpdated DateTime @default(now()) @map("last_updated")
 
   @@map("inventory")
@@ -137,7 +139,7 @@ model SaleItem {
   sale      Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
   productId String  @map("product_id") @db.ObjectId
   product   Product @relation(fields: [productId], references: [id])
-  quantity  Int
+  quantity  Float
   unitPrice Float   @map("unit_price")
   subtotal  Float
 
@@ -220,4 +222,11 @@ enum PaymentStatus {
   PENDING
   PAID
   OVERDUE
+}
+
+enum PricingUnit {
+  PIECE    // Default for regular products
+  KG       // Price per kilogram
+  G        // Price per gram
+  PER_100G // Price per 100 grams
 }

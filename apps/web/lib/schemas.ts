@@ -8,6 +8,10 @@ export const loginSchema = z.object({
 
 export type LoginFormData = z.infer<typeof loginSchema>;
 
+// Pricing unit type
+export const pricingUnitOptions = ['PIECE', 'KG', 'G', 'PER_100G'] as const;
+export type PricingUnit = typeof pricingUnitOptions[number];
+
 // Product schemas - use string inputs, convert on submit
 export const createProductSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -17,7 +21,9 @@ export const createProductSchema = z.object({
   cost: z.string().refine((val) => !isNaN(Number(val)) && Number(val) >= 0, 'Cost must be a non-negative number'),
   categoryId: z.string().optional(),
   reorderLevel: z.string().refine((val) => !isNaN(Number(val)) && Number(val) >= 0 && Number.isInteger(Number(val)), 'Reorder level must be a non-negative integer'),
-  initialStock: z.string().refine((val) => !isNaN(Number(val)) && Number(val) >= 0 && Number.isInteger(Number(val)), 'Initial stock must be a non-negative integer'),
+  initialStock: z.string().refine((val) => !isNaN(Number(val)) && Number(val) >= 0, 'Initial stock must be a non-negative number'),
+  isWeightBased: z.boolean().optional().default(false),
+  pricingUnit: z.enum(pricingUnitOptions).optional().default('PIECE'),
 });
 
 export type CreateProductFormData = z.infer<typeof createProductSchema>;
@@ -32,6 +38,8 @@ export interface CreateProductPayload {
   categoryId?: string;
   reorderLevel: number;
   initialStock: number;
+  isWeightBased?: boolean;
+  pricingUnit?: PricingUnit;
 }
 
 export function convertProductFormData(data: CreateProductFormData): CreateProductPayload {
@@ -44,6 +52,8 @@ export function convertProductFormData(data: CreateProductFormData): CreateProdu
     categoryId: data.categoryId,
     reorderLevel: Number(data.reorderLevel),
     initialStock: Number(data.initialStock),
+    isWeightBased: data.isWeightBased,
+    pricingUnit: data.isWeightBased ? data.pricingUnit : 'PIECE',
   };
 }
 
@@ -55,6 +65,8 @@ export const updateProductSchema = z.object({
   cost: z.string().refine((val) => !isNaN(Number(val)) && Number(val) >= 0, 'Cost must be a non-negative number'),
   categoryId: z.string().optional(),
   reorderLevel: z.string().refine((val) => !isNaN(Number(val)) && Number(val) >= 0 && Number.isInteger(Number(val)), 'Reorder level must be a non-negative integer'),
+  isWeightBased: z.boolean().optional().default(false),
+  pricingUnit: z.enum(pricingUnitOptions).optional().default('PIECE'),
 });
 
 export type UpdateProductFormData = z.infer<typeof updateProductSchema>;
@@ -66,6 +78,8 @@ export interface UpdateProductPayload {
   cost: number;
   categoryId?: string;
   reorderLevel: number;
+  isWeightBased?: boolean;
+  pricingUnit?: PricingUnit;
 }
 
 export function convertUpdateProductFormData(data: UpdateProductFormData): UpdateProductPayload {
@@ -76,6 +90,8 @@ export function convertUpdateProductFormData(data: UpdateProductFormData): Updat
     cost: Number(data.cost),
     categoryId: data.categoryId,
     reorderLevel: Number(data.reorderLevel),
+    isWeightBased: data.isWeightBased,
+    pricingUnit: data.isWeightBased ? data.pricingUnit : 'PIECE',
   };
 }
 
@@ -113,14 +129,14 @@ export type CreateExpenseFormData = z.infer<typeof createExpenseSchema>;
 
 // Inventory schemas
 export const restockSchema = z.object({
-  quantity: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0 && Number.isInteger(Number(val)), 'Quantity must be a positive integer'),
+  quantity: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, 'Quantity must be a positive number'),
   notes: z.string().optional(),
 });
 
 export type RestockFormData = z.infer<typeof restockSchema>;
 
 export const adjustInventorySchema = z.object({
-  quantity: z.string().refine((val) => !isNaN(Number(val)) && Number.isInteger(Number(val)), 'Quantity must be an integer'),
+  quantity: z.string().refine((val) => !isNaN(Number(val)), 'Quantity must be a number'),
   isAbsolute: z.boolean(),
   reason: z.string().optional(),
 });

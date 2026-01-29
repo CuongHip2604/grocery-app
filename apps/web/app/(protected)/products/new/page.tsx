@@ -32,10 +32,13 @@ export default function NewProductPage() {
       categoryId: '',
       reorderLevel: '5',
       initialStock: '0',
+      isWeightBased: false,
+      pricingUnit: 'PIECE',
     },
   });
 
   const barcodeValue = watch('barcode');
+  const isWeightBased = watch('isWeightBased');
 
   const handleBarcodeScan = useCallback((scannedBarcode: string) => {
     setShowScanner(false);
@@ -117,6 +120,37 @@ export default function NewProductPage() {
               <div className="space-y-2">
                 <Label htmlFor="description">Mô tả</Label>
                 <Input id="description" {...register('description')} />
+              </div>
+
+              <div className="space-y-3 rounded-md border p-3">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="isWeightBased"
+                    className="h-4 w-4 rounded border-gray-300"
+                    {...register('isWeightBased')}
+                  />
+                  <Label htmlFor="isWeightBased" className="text-sm font-medium cursor-pointer">
+                    Sản phẩm tính theo cân nặng
+                  </Label>
+                </div>
+                {isWeightBased && (
+                  <div className="space-y-2">
+                    <Label htmlFor="pricingUnit">Đơn vị tính giá</Label>
+                    <select
+                      id="pricingUnit"
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      {...register('pricingUnit')}
+                    >
+                      <option value="KG">Kilogram (kg)</option>
+                      <option value="G">Gram (g)</option>
+                      <option value="PER_100G">100 gram (100g)</option>
+                    </select>
+                    <p className="text-xs text-muted-foreground">
+                      Giá bán bên dưới sẽ là giá cho mỗi đơn vị này
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">

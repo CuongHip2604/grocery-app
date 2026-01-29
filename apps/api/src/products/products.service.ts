@@ -5,6 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { PricingUnit } from '@prisma/client';
 import * as XLSX from 'xlsx';
 import {
   CreateProductDto,
@@ -541,6 +542,8 @@ export class ProductsService {
     categoryId: string | null;
     reorderLevel: number;
     isCustomLabel: boolean;
+    isWeightBased: boolean;
+    pricingUnit: PricingUnit;
     createdAt: Date;
     updatedAt: Date;
     category?: { id: string; name: string; description: string | null } | null;
@@ -563,6 +566,8 @@ export class ProductsService {
         : null,
       reorderLevel: product.reorderLevel,
       isCustomLabel: product.isCustomLabel,
+      isWeightBased: product.isWeightBased,
+      pricingUnit: product.pricingUnit,
       inventory: product.inventory
         ? {
             id: product.inventory.id,

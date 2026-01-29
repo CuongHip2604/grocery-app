@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateSaleDto, SalesQueryDto } from './dto/sales.dto';
-import { PaymentType, SaleStatus, CreditEntryType } from '@prisma/client';
+import { PaymentType, SaleStatus, CreditEntryType, PricingUnit } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
 import { LowStockProduct } from '../notifications/dto/notifications.dto';
 
@@ -65,11 +65,33 @@ export class SalesService {
       }
     }
 
-    // Calculate sale items with prices
+    // Calculate sale items with prices (handles weight-based products)
     const saleItems = items.map((item) => {
       const product = products.find((p) => p.id === item.productId)!;
       const unitPrice = Number(product.price);
-      const subtotal = unitPrice * item.quantity;
+      let subtotal: number;
+
+      if (product.isWeightBased) {
+        // For weight-based products, quantity is in kg
+        const quantityInKg = item.quantity;
+        switch (product.pricingUnit) {
+          case PricingUnit.KG:
+            subtotal = unitPrice * quantityInKg;
+            break;
+          case PricingUnit.G:
+            subtotal = unitPrice * (quantityInKg * 1000);
+            break;
+          case PricingUnit.PER_100G:
+            subtotal = unitPrice * (quantityInKg * 10);
+            break;
+          default:
+            subtotal = unitPrice * quantityInKg;
+        }
+      } else {
+        // Regular products: quantity * price
+        subtotal = unitPrice * item.quantity;
+      }
+
       return {
         productId: item.productId,
         quantity: item.quantity,
@@ -413,7 +435,13 @@ export class SalesService {
       quantity: number;
       unitPrice: unknown;
       subtotal: unknown;
-      product?: { id: string; name: string; barcode: string } | null;
+      product?: {
+        id: string;
+        name: string;
+        barcode: string;
+        isWeightBased?: boolean;
+        pricingUnit?: PricingUnit;
+      } | null;
     }>;
   }) {
     return {
@@ -438,6 +466,8 @@ export class SalesService {
               id: item.product.id,
               name: item.product.name,
               barcode: item.product.barcode,
+              isWeightBased: item.product.isWeightBased ?? false,
+              pricingUnit: item.product.pricingUnit ?? PricingUnit.PIECE,
             }
           : null,
         quantity: item.quantity,

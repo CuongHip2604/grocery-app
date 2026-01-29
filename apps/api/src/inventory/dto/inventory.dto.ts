@@ -11,7 +11,7 @@ import { Type } from 'class-transformer';
 
 export class AdjustInventoryDto {
   @Type(() => Number)
-  @IsInt()
+  @IsNumber({ maxDecimalPlaces: 3 })
   quantity: number; // Positive or negative adjustment, or absolute value
 
   @IsBoolean()
@@ -25,8 +25,8 @@ export class AdjustInventoryDto {
 
 export class RestockDto {
   @Type(() => Number)
-  @IsInt()
-  @Min(1)
+  @IsNumber({ maxDecimalPlaces: 3 })
+  @Min(0.001)
   quantity: number;
 
   @IsString()

@@ -9,8 +9,10 @@ import {
   IsInt,
   IsArray,
   ValidateNested,
+  IsEnum,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { PricingUnit } from '@prisma/client';
 
 export class CreateProductDto {
   @IsString()
@@ -49,8 +51,16 @@ export class CreateProductDto {
   @IsOptional()
   isCustomLabel?: boolean;
 
+  @IsBoolean()
+  @IsOptional()
+  isWeightBased?: boolean;
+
+  @IsEnum(PricingUnit)
+  @IsOptional()
+  pricingUnit?: PricingUnit;
+
   @Type(() => Number)
-  @IsInt()
+  @IsNumber({ maxDecimalPlaces: 3 })
   @IsOptional()
   @Min(0)
   initialStock?: number;
@@ -90,6 +100,14 @@ export class UpdateProductDto {
   @IsBoolean()
   @IsOptional()
   isCustomLabel?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  isWeightBased?: boolean;
+
+  @IsEnum(PricingUnit)
+  @IsOptional()
+  pricingUnit?: PricingUnit;
 }
 
 export class CreateCategoryDto {
